@@ -268,7 +268,7 @@ std::string facebook_client::choose_action( int request_type, std::string* data 
 		return "/login.php?login_attempt=1";
 
 	case FACEBOOK_REQUEST_SETUP_MACHINE:
-		return "/loginnotify/setup_machine.php";
+		return "/loginnotify/setup_machine.php?persistent=1";
 
 	case FACEBOOK_REQUEST_LOGOUT:
 		return "/logout.php";
@@ -493,7 +493,7 @@ void facebook_client::clear_cookies( )
 
 //////////////////////////////////////////////////////////////////////////////
 
-bool facebook_client::api_check( )
+/*bool facebook_client::api_check( )
 {
 	handle_entry( "api_check" );
 
@@ -512,8 +512,11 @@ bool facebook_client::api_check( )
 
 	}
 
+  // Clear Google Code cookies
+	clear_cookies();
+
 	return handle_success( "api_check" );
-}
+}*/
 
 bool facebook_client::login(const std::string &username,const std::string &password)
 {
@@ -521,9 +524,6 @@ bool facebook_client::login(const std::string &username,const std::string &passw
 
 	username_ = username;
 	password_ = password;
-
-	// Prepare validation data
-	clear_cookies( );
 
 	// Access homepage to get initial cookies
 	flap( FACEBOOK_REQUEST_HOME, NULL );
@@ -543,9 +543,13 @@ bool facebook_client::login(const std::string &username,const std::string &passw
 
 	// Check whether setting Machine name is required
 	if ( resp.code == HTTP_CODE_FOUND && resp.headers.find("Location") != resp.headers.end() && resp.headers["Location"].find("loginnotify/setup_machine.php") != std::string::npos ) {
-		std::string inner_data = "charset_test=%e2%82%ac%2c%c2%b4%2c%e2%82%ac%2c%c2%b4%2c%e6%b0%b4%2c%d0%94%2c%d0%84&locale=en&machinename=MirandaIM&remembercomputer=1"; // remembercomputer=1 RM TODO
+		std::string inner_data = "charset_test=%e2%82%ac%2c%c2%b4%2c%e2%82%ac%2c%c2%b4%2c%e6%b0%b4%2c%d0%94%2c%d0%84&locale=en&machinename=MirandaIM&remembercomputer=1";
 	//	inner_data += g_strUserAgent; // RM TODO max. 40 znakù
 		flap( FACEBOOK_REQUEST_SETUP_MACHINE, &inner_data ); }
+
+	// Check for Device ID
+	if ( cookies["datr"].length() )
+		DBWriteContactSettingString( NULL, parent->m_szModuleName, FACEBOOK_KEY_DEVICE_ID, cookies["datr"].c_str() );
 
 	switch ( resp.code )
 	{
@@ -622,9 +626,34 @@ bool facebook_client::logout( )
 	}
 }
 
-bool facebook_client::keep_alive( )
+bool facebook_client::keep_online( )
 {
 	if ( parent->isOffline() )
+		return false;
+  
+  handle_entry( "keep_online" );  
+
+  http::response resp = flap( FACEBOOK_REQUEST_HOME , NULL );
+
+	// Process result
+	validate_response(&resp);
+
+	switch ( resp.code )
+	{
+
+	case HTTP_CODE_OK:
+	case HTTP_CODE_FOUND:
+		return handle_success( "keep_online" );
+
+	default:
+		return handle_error( "keep_online" );
+
+	}
+}
+
+bool facebook_client::keep_alive( )
+{
+  if ( parent->isOffline() )
 		return false;
 
 	handle_entry( "keep_alive" );
@@ -743,12 +772,12 @@ bool facebook_client::home( )
 	}
 }
 
-bool facebook_client::reconnect( )
+bool facebook_client::chat_state( bool online )
 {
-	handle_entry( "reconnect" );
-
-	// Set online "status" for chat - also turns on manually logged-out chat
-	std::string data = "visibility=true";
+  handle_entry( "chat_state" );
+  
+  std::string data = "visibility=";
+  data += ( online ) ? "true" : "false";
 	data += "&window_id=0";
 	data += "&post_form_id=";
 	data += ( post_form_id_.length( ) ) ? post_form_id_ : "0";
@@ -756,9 +785,18 @@ bool facebook_client::reconnect( )
 	data += "&fb_dtsg=" + this->dtsg_;
 	data += "&lsd=";
 	http::response resp = flap( FACEBOOK_REQUEST_SETTINGS, &data );
+  
+  return handle_success( "chat_state" );
+}
+
+bool facebook_client::reconnect( )
+{
+	handle_entry( "reconnect" );
+
+  chat_state( true );
 
 	// Request reconnect
-	resp = flap( FACEBOOK_REQUEST_RECONNECT );
+	http::response resp = flap( FACEBOOK_REQUEST_RECONNECT );
 
 	// Process result data
 	validate_response(&resp);
@@ -783,7 +821,7 @@ bool facebook_client::reconnect( )
 
 bool facebook_client::buddy_list( )
 {
-	handle_entry( "buddy_list" );
+  handle_entry( "buddy_list" );
 
 	// Prepare update data
 	std::string data = "user=" + this->self_.user_id + "&popped_out=false&force_render=true&buddy_list=1&notifications=0&post_form_id=" + this->post_form_id_ + "&fb_dtsg=" + this->dtsg_ + "&post_form_id_source=AsyncRequest&__a=1&nctr[n]=1";
@@ -830,13 +868,21 @@ bool facebook_client::feeds( )
 	// Process result data
 	validate_response(&resp);
 
+  int pos;
+
 	switch ( resp.code )
 	{
 
 	case HTTP_CODE_OK:
-		if ( resp.data.find( "\"storyCount\":" ) != std::string::npos ) {
-			std::string* response_data = new std::string( resp.data );
-			ForkThread( &FacebookProto::ProcessFeeds, this->parent, ( void* )response_data ); }
+		pos = resp.data.find( "\"storyCount\":" );
+    if ( pos != std::string::npos )
+    {
+			if (resp.data.substr( pos + 13, 1 ) != "0")
+      {
+        std::string* response_data = new std::string( resp.data );
+			  ForkThread( &FacebookProto::ProcessFeeds, this->parent, ( void* )response_data );
+      }
+    }
 		return handle_success( "feeds" );
 
 	case HTTP_CODE_FAKE_ERROR:

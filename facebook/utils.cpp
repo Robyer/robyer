@@ -141,6 +141,48 @@ std::string utils::text::special_expressions_decode( std::string data )
 	return data;
 }
 
+std::string utils::text::edit_html( std::string data )
+{
+  std::string::size_type end = 0;
+  std::string::size_type start = 0;
+  std::string new_string = "";
+  
+  while ( end != std::string::npos )
+  {
+    end = data.find( "<span class=\"text_exposed_hide", start );
+    if ( end != std::string::npos )
+    {
+      new_string += data.substr( start, end - start );
+      start = data.find( "</span", end );
+    } else {
+      new_string += data.substr( start, data.length() - start );
+    }
+  }
+
+  start = 0;
+  end = 0;
+  data = new_string;
+  new_string = "";
+
+  while ( end != std::string::npos )
+  {
+    end = data.find( "<span class=\"uiTooltipText", start );
+    if ( end != std::string::npos )
+    {
+      new_string += data.substr( start, end - start );
+      start = data.find( "</span", end );
+    } else {
+      new_string += data.substr( start, data.length() - start );
+    }
+  }
+  
+  utils::text::replace_all( &new_string, "<br />", "\n" );
+  utils::text::replace_all( &new_string, "<br>", "\n" );
+
+	return new_string;
+}
+
+
 std::string utils::text::remove_html( std::string data )
 {
 	std::string new_string = "";

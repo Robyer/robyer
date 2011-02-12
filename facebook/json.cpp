@@ -73,8 +73,8 @@ int facebook_json_parser::parse_buddy_list( void* data, List::List< facebook_use
 			const Boolean idle = objMember["i"];
 
 			current->user_id = current->real_name = member.name;
-			current->status_id = ID_STATUS_ONLINE;
-			current->is_idle = ( idle.Value( ) == 1 );
+      current->is_idle = ( idle.Value( ) == 1 );
+      current->status_id = current->is_idle ? ID_STATUS_AWAY : ID_STATUS_ONLINE;			
 		}
 
 		const Object& userInfosList = objRoot["payload"]["buddy_list"]["userInfos"];
