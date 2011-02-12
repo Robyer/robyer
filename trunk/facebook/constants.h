@@ -29,15 +29,15 @@ Last change on : $Date$
 
 // Version management
 #include "build.h"
-#define __VERSION_DWORD             PLUGIN_MAKE_VERSION(0, 1, 3, 2)
+#define __VERSION_DWORD             PLUGIN_MAKE_VERSION(0, 0, 2, 0)
 #define __PRODUCT_DWORD             PLUGIN_MAKE_VERSION(0, 9, 14, 0)
-#define __VERSION_STRING            "0.1.3.2"
+#define __VERSION_STRING            "0.0.2.0"
 #define __PRODUCT_STRING            "0.9.14.0"
-#define __VERSION_VS_FILE           0,1,3,2
+#define __VERSION_VS_FILE           0,0,2,0
 #define __VERSION_VS_PROD           0,9,14,0
-#define __VERSION_VS_FILE_STRING    "0, 1, 3, 2"
+#define __VERSION_VS_FILE_STRING    "0, 0, 2, 0"
 #define __VERSION_VS_PROD_STRING    "0, 9, 14, 0"
-#define __API_VERSION_STRING        "3.1"
+//#define __API_VERSION_STRING        "3.1"
 
 // API versions
 // 3.1 -- minor change in Logout procedure
@@ -54,7 +54,7 @@ Last change on : $Date$
 #define FACEBOOK_URL_HOMEPAGE       "http://www.facebook.com/"
 #define FACEBOOK_URL_REQUESTS       "http://www.facebook.com/reqs.php"
 #define FACEBOOK_URL_MESSAGES       "http://www.facebook.com/n/?inbox"
-#define PLUGIN_HOSTING_URL          "http://code.google.com/p/eternityplugins/"
+//#define PLUGIN_HOSTING_URL          "http://code.google.com/p/eternityplugins/"
 
 // Connection
 #define FACEBOOK_SERVER_REGULAR     "www.facebook.com"
@@ -128,17 +128,17 @@ static const char* user_agents[] = {
 //	"FacebookTouch2.5",
 //	"Facebook/2.5 CFNetwork/342.1 Darwin/9.4.1",
 //	"Lynx/2.8.4rel.1 libwww-FM/2.14",
-	"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.2; SV1; .NET CLR 1.1.4322)",
-	"Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0)",
+	"Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0)",
+	"Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)",
 //	"Mozilla/4.08 [en] (WinNT; U ;Nav)",
-	"Mozilla/5.0 (compatible; Konqueror/3.5; Linux 2.6.21-rc1; x86_64; cs, en_US) KHTML/3.5.6 (like Gecko)",
-	"Mozilla/5.0 (Windows; U; Windows NT 5.1; ru; rv:1.8.1.9) Gecko/20071025 Firefox/2.0.0.9",
+	"Mozilla/5.0 (Windows NT 6.1; rv:2.0) Gecko/20100101 Firefox/4.0",
 //	"Opera/8.01 (J2ME/MIDP; Opera Mini/3.0.6306/1528; nb; U; ssr)",
 //	"Opera/9.27 (Windows NT 5.1; U; en)",
 //	"Opera/9.64 (Windows NT 5.1; U; en)",
-	"Opera/9.80 (Windows NT 5.1; U; en) Presto/2.2.15 Version/10.00",
-	"Opera/9.80 (Macintosh; Intel Mac OS X; U; en) Presto/2.2.15 Version/10.00",
-	"Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_5_7; en-US) AppleWebKit/531.0 (KHTML, like Gecko) Chrome/3.0.183 Safari/531.0",
+	"Opera/9.80 (Windows NT 5.1; U; en) Presto/2.7.62 Version/11.01",
+	"Opera/9.80 (Macintosh; Intel Mac OS X 10.5.8; U; en) Presto/2.7.62 Version/11.01",
+	"Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_7; en-us) AppleWebKit/534.16+ (KHTML, like Gecko) Version/5.0.3 Safari/533.19.4",
+	"Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/534.19 (KHTML, like Gecko) Chrome/11.0.661.0 Safari/534.19",
 //	"Mozilla/5.0 (iPod; U; CPU iPhone OS 2_2_1 like Mac OS X; en-us) AppleWebKit/525.18.1 (KHTML, like Gecko) Version/3.1.1 Mobile/5H11a Safari/525.20",
 //	"HTC-8900/1.2 Mozilla/4.0 (compatible; MSIE 6.0; Windows CE; IEMobile 7.6) UP.Link/6.3.0.0.0",
 //	"BlackBerry8320/4.3.1 Profile/MIDP-2.0 Configuration/CLDC-1.1",

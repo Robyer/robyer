@@ -41,17 +41,17 @@ DWORD g_mirandaVersion;
 
 PLUGININFOEX pluginInfo = {
 	sizeof(PLUGININFOEX),
-	"Facebook Protocol",
+	"Facebook Protocol RM",
 	__VERSION_DWORD,
 	"Provides basic support for Facebook Chat protocol. [Built: "__DATE__" "__TIME__"]",
-	"Michal Zelinka",
-	"jarvis@jabber.cz",
-	"© 2009-11 Michal Zelinka",
-	"http://dev.miranda.im/~jarvis/",
+	"Robert Posel",
+	"robyer@seznam.cz",
+	"(c) 2009-11 Michal Zelinka, 2011 Robert Posel",
+	"http://robyer.info/",
 	UNICODE_AWARE, //not transient
 	0,             //doesn't replace anything built-in
-	// {DDE897AD-E40A-4e2c-98D8-D20B575E96BC}
-	{ 0xdde897ad, 0xe40a, 0x4e2c, { 0x98, 0xd8, 0xd2, 0xb, 0x57, 0x5e, 0x96, 0xbc } }
+	// {8432B009-FF32-4727-AAE6-A9035038FD58}
+  { 0x8432b009, 0xff32, 0x4727, { 0xaa, 0xe6, 0xa9, 0x3, 0x50, 0x38, 0xfd, 0x58 } }
 
 };
 
@@ -131,7 +131,7 @@ int OnModulesLoaded(WPARAM,LPARAM)
 {
 	if ( ServiceExists( MS_UPDATE_REGISTER ) )
 	{
-		Update upd = {sizeof(upd)};
+		/*Update upd = {sizeof(upd)};
 		char curr_version[30];
 
 		upd.szComponentName = pluginInfo.shortName;
@@ -144,7 +144,7 @@ int OnModulesLoaded(WPARAM,LPARAM)
 		upd.pbVersion = reinterpret_cast<BYTE*>( CreateVersionStringPlugin(
 			reinterpret_cast<PLUGININFO*>(&pluginInfo),curr_version) );
 		upd.cpbVersion = strlen(reinterpret_cast<char*>(upd.pbVersion));
-		CallService(MS_UPDATE_REGISTER,0,(LPARAM)&upd);
+		CallService(MS_UPDATE_REGISTER,0,(LPARAM)&upd);*/
 	}
 
 	return 0;
@@ -188,7 +188,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 		agent << (( g_mirandaVersion >>  8) & 0xFF);
 		agent << ".";
 		agent << (( g_mirandaVersion      ) & 0xFF);
-		agent << " FacebookProtocol/";
+		agent << " FacebookProtocolRM/";
 		agent << __VERSION_STRING;
 		g_strUserAgent = agent.str( );
 	}

@@ -46,7 +46,7 @@ public:
 		chat_sequence_num_ = error_count_ = \
 		last_feeds_update_ = 0;
 
-		chat_first_touch_ = idle_ = false;
+		chat_first_touch_ = idle_ = invisible_ = false;
 
 		buddies_lock_ = NULL;
 	}
@@ -69,9 +69,10 @@ public:
 	unsigned int    chat_sequence_num_;
 	bool    chat_first_touch_;
 	bool    idle_;
+  bool    invisible_;
 	time_t  last_feeds_update_;
 
-	bool api_check( );
+	//bool api_check( );
 
 	////////////////////////////////////////////////////////////
 
@@ -126,7 +127,9 @@ public:
 
 	bool    home( );
 	bool    reconnect( );
+  bool    chat_state( bool online = true );
 	bool    keep_alive( );
+  bool    keep_online( );
 
 	////////////////////////////////////////////////////////////
 

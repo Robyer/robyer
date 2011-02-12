@@ -27,10 +27,6 @@ Last change on : $Date: 2011-01-08 11:10:34 +0100 (so, 08 1 2011) $
 
 #include "common.h"
 
-//void CALLBACK FacebookProto::APC_callback(ULONG_PTR p)
-//{
-//}
-
 void FacebookProto::KillThreads( )
 {
 	// Kill the old threads if they are still around
@@ -62,7 +58,8 @@ void FacebookProto::SignOn(void*)
 
 		setDword( "LogonTS", (DWORD)time(NULL) );
 		m_hUpdLoop = ForkThreadEx( &FacebookProto::UpdateLoop,  this );
-		m_hMsgLoop = ForkThreadEx( &FacebookProto::MessageLoop, this );
+		if ( m_iDesiredStatus != ID_STATUS_INVISIBLE )
+      m_hMsgLoop = ForkThreadEx( &FacebookProto::MessageLoop, this );
 	}
 	ToggleStatusMenuItems(isOnline());
 
@@ -114,6 +111,11 @@ bool FacebookProto::NegotiateConnection( )
 		NotifyEvent(m_tszUserName,TranslateT("Please enter a username."),NULL,FACEBOOK_EVENT_CLIENT);
 		goto error;
 	}
+  if( !DBGetContactSettingString(NULL,m_szModuleName,FACEBOOK_KEY_DEVICE_ID,&dbv) )
+	{
+		facy.cookies["datr"] = dbv.pszVal;
+		DBFreeVariant(&dbv);
+	}
 
 	if( !DBGetContactSettingString(NULL,m_szModuleName,FACEBOOK_KEY_PASS,&dbv) )
 	{
@@ -130,11 +132,15 @@ bool FacebookProto::NegotiateConnection( )
 
 	bool success;
 	{
-		facy.api_check( );
 		success = facy.login( user, pass );
 		if (success) success = facy.home( );
-		if (success) success = facy.reconnect( );
-		if (success) success = facy.buddy_list( );
+		
+    if ( m_iDesiredStatus != ID_STATUS_INVISIBLE )
+    {
+		  if (success) success = facy.reconnect( );
+      if (success) success = facy.buddy_list( );
+    }
+
 	}
 
 	if(!success)
@@ -174,8 +180,9 @@ void FacebookProto::UpdateLoop(void *)
 		if ( !isOnline( ) )
 			break;
 		if ( i != 0 )
-			if ( !facy.buddy_list( ) )
-				break;
+			if ( !facy.invisible_ )
+        if ( !facy.buddy_list( ) )
+  				break;
 		if ( !isOnline( ) )
 			break;
 		if ( i % 6 == 3 && getByte( FACEBOOK_KEY_EVENT_FEEDS_ENABLE, DEFAULT_EVENT_FEEDS_ENABLE ) )
@@ -184,8 +191,13 @@ void FacebookProto::UpdateLoop(void *)
 		if ( !isOnline( ) )
 			break;
 		if ( i % 8 == 7 ) // TODO: More often? Another solution?
-			if ( !facy.keep_alive( ) )
-				break;
+			if ( !facy.invisible_ )
+        if ( !facy.keep_alive( ) )
+				  break;
+    if ( i % 8 == 6 )
+      if ( !facy.idle_ )
+			  if ( !facy.keep_online( ) )
+  				break;
 		if ( !isOnline( ) )
 			break;
 		LOG( "***** FacebookProto::UpdateLoop going to sleep..." );
@@ -208,6 +220,8 @@ void FacebookProto::MessageLoop(void *)
 			break;
 		if ( !facy.channel( ) )
 			break;
+    if ( facy.invisible_ )
+      break;
 		LOG( "***** FacebookProto::MessageLoop refreshing..." );
 	}
 

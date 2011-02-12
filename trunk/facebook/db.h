@@ -46,8 +46,9 @@ Last change on : $Date: 2011-01-08 11:10:34 +0100 (so, 08 1 2011) $
 #define FACEBOOK_KEY_LOGIN          "Email"
 #define FACEBOOK_KEY_ID             "ID"
 #define FACEBOOK_KEY_NAME           "RealName"
-#define FACEBOOK_KEY_UPD_NAMES      "UpdateNames"
 #define FACEBOOK_KEY_PASS           "Password"
+#define FACEBOOK_KEY_UPD_NAMES      "UpdateNames"
+#define FACEBOOK_KEY_DEVICE_ID      "DeviceID"
 #define FACEBOOK_KEY_AV_URL         "AvatarURL"
 
 #define FACEBOOK_KEY_DEF_GROUP      "DefaultGroup"

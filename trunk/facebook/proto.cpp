@@ -89,6 +89,9 @@ FacebookProto::FacebookProto(const char* proto_name,const TCHAR* username)
 
 	// Set all contacts offline -- in case we crashed
 	SetAllContactStatuses( ID_STATUS_OFFLINE );
+
+  // Check plugin API
+	//facy.api_check( );
 }
 
 FacebookProto::~FacebookProto( )
@@ -127,9 +130,12 @@ DWORD FacebookProto::GetCaps( int type, HANDLE hContact )
 		else
 			return PF1_IM | PF1_MODEMSGRECV;
 	case PFLAGNUM_2:
-		return PF2_ONLINE;
+    return PF2_ONLINE | PF2_IDLE | PF2_INVISIBLE | PF2_SHORTAWAY;
 	case PFLAGNUM_3:
-		return PF2_ONLINE;
+		if ( getByte( FACEBOOK_KEY_SET_MIRANDA_STATUS, 0 ) )
+      return PF2_ONLINE | PF2_SHORTAWAY;
+    else
+      return 0;
 	case PFLAGNUM_4:
 		return PF4_FORCEAUTH | PF4_NOCUSTOMAUTH | PF4_SUPPORTIDLE | PF4_IMSENDUTF | PF4_AVATARS | PF4_SUPPORTTYPING | PF4_NOAUTHDENYREASON | PF4_IMSENDOFFLINE;
 	case PFLAG_MAXLENOFMESSAGE:
@@ -157,38 +163,73 @@ HICON FacebookProto::GetIcon(int index)
 
 int FacebookProto::SetStatus( int new_status )
 {
-	int old_status = m_iStatus;
-	if ( new_status == m_iStatus )
+	// Routing statuses not supported by Facebook
+  switch ( new_status )
+  {
+  case ID_STATUS_FREECHAT:
+    new_status = ID_STATUS_ONLINE;
+    break;
+  case ID_STATUS_DND:
+  case ID_STATUS_NA:
+  case ID_STATUS_OCCUPIED:
+  case ID_STATUS_ONTHEPHONE:
+  case ID_STATUS_OUTTOLUNCH:
+    new_status = ID_STATUS_AWAY;
+    break;
+  }
+
+  int old_status = m_iStatus;
+  m_iDesiredStatus = new_status;
+
+	if ( new_status == old_status)
 		return 0;
 
-	m_iDesiredStatus = new_status;
+  if ( old_status == ID_STATUS_CONNECTING && new_status != ID_STATUS_OFFLINE )
+		return 0;
 
-	if ( new_status == ID_STATUS_ONLINE )
+  facy.idle_ = ( new_status != ID_STATUS_ONLINE && new_status != ID_STATUS_OFFLINE );
+  facy.invisible_ = ( new_status == ID_STATUS_INVISIBLE );
+
+  if ( new_status == ID_STATUS_OFFLINE )
 	{
-		if ( old_status == ID_STATUS_CONNECTING )
-			return 0;
-
-		m_iStatus = facy.self_.status_id = ID_STATUS_CONNECTING;
-		ProtoBroadcastAck( m_szModuleName, 0, ACKTYPE_STATUS, ACKRESULT_SUCCESS,
-			( HANDLE )old_status, m_iStatus );
-
-		ForkThread( &FacebookProto::SignOn, this );
-	}
-	else if ( new_status == ID_STATUS_OFFLINE )
-	{
-		m_iStatus = facy.self_.status_id = ID_STATUS_CONNECTING;
-		ProtoBroadcastAck( m_szModuleName, 0, ACKTYPE_STATUS, ACKRESULT_SUCCESS,
-			( HANDLE ) old_status, m_iStatus );
-
-		facy.self_.status_id = ID_STATUS_CONNECTING;
+		new_status = ID_STATUS_CONNECTING;
 		ForkThread( &FacebookProto::SignOff, this );
 	}
+  else if ( old_status == ID_STATUS_OFFLINE )
+  {
+    new_status = ID_STATUS_CONNECTING;
+    ForkThread( &FacebookProto::SignOn, this );
+  }
+  else if ( old_status == ID_STATUS_INVISIBLE )
+  {
+    facy.home( );
+    facy.chat_state( true );
+    facy.reconnect( );
+    facy.buddy_list( );
 
-	// Routing statuses not supported by Facebook
-	else if ( new_status == ID_STATUS_INVISIBLE )
-		SetStatus( ID_STATUS_OFFLINE );
-	else
-		SetStatus( ID_STATUS_ONLINE );
+    m_hMsgLoop = ForkThreadEx( &FacebookProto::MessageLoop, this );
+  }
+  else if ( new_status == ID_STATUS_INVISIBLE )
+  {
+    if(m_hMsgLoop)
+	  {
+  		LOG("***** Requesting MessageLoop to exit");
+		  WaitForSingleObject(m_hMsgLoop,IGNORE);
+		  ReleaseMutex(m_hMsgLoop);
+	  }
+   
+    facy.chat_state( false );
+    this->SetAllContactStatuses( ID_STATUS_OFFLINE );
+  }
+  else if ( old_status == ID_STATUS_AWAY )
+  {
+    facy.chat_state( true );
+    facy.reconnect( );
+  }
+
+  m_iStatus = facy.self_.status_id = new_status;
+  ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS, 
+    (HANDLE)old_status,m_iStatus);
 
 	return 0;
 }
@@ -286,14 +327,14 @@ int FacebookProto::OnPreShutdown(WPARAM wParam,LPARAM lParam)
 int FacebookProto::OnIdleChanged(WPARAM wParam,LPARAM lParam)
 {
 	// Actually, is this ever called?
-	if (!(lParam & IDF_PRIVACY) && (lParam & IDF_ISIDLE)) {
+/*	if (!(lParam & IDF_PRIVACY) && (lParam & IDF_ISIDLE)) {
 		facy.idle_ = true;
 		Log("Swiched self to Idle");
 	} else {
 		facy.idle_ = false;
 		Log("Swiched self back from Idle");
 		facy.reconnect(); // "reconnect" into online state
-	}
+	}*/
 	return 0;
 }
 
