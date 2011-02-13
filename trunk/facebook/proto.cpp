@@ -208,12 +208,12 @@ int FacebookProto::SetStatus( int new_status )
   }
   else if ( old_status == ID_STATUS_INVISIBLE )
   {
-    m_iStatus = facy.self_.status_id = ID_STATUS_INVISIBLE;
+    m_iStatus = facy.self_.status_id = new_status;
     ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS, 
     (HANDLE)old_status,m_iStatus);
 
-    facy.home( );
     facy.chat_state( true );
+    facy.home( );
     facy.reconnect( );
     facy.buddy_list( );
   }
@@ -228,7 +228,7 @@ int FacebookProto::SetStatus( int new_status )
   }
   else if ( old_status == ID_STATUS_AWAY )
   {
-    m_iStatus = facy.self_.status_id = ID_STATUS_ONLINE;
+    m_iStatus = facy.self_.status_id = new_status;
     ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS, 
     (HANDLE)old_status,m_iStatus);
 
