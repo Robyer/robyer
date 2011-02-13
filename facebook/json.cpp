@@ -177,7 +177,9 @@ int facebook_json_parser::parse_messages( void* data, std::vector< facebook_mess
 				fbu.user_id = user_id;
 
 				HANDLE hContact = proto->AddToContactList(&fbu);
-				DBWriteContactSettingWord(hContact,proto->m_szModuleName,"Status",ID_STATUS_ONLINE);
+				
+        if ( DBGetContactSettingDword(hContact,proto->m_szModuleName,"Status", 0) == ID_STATUS_OFFLINE )
+          DBWriteContactSettingWord(hContact,proto->m_szModuleName,"Status",ID_STATUS_ONLINE);
 
 				const Number& state = objMember["st"];
 				if (state.Value() == 1)

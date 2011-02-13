@@ -68,11 +68,11 @@ std::string utils::conversion::to_string( void* data, WORD type )
 		break;
 
 	case UTILS_CONV_SIGNED_NUMBER:
-		out << (*( signed long long* )data);
+		out << (*( signed int* )data);
 		break;
 
 	case UTILS_CONV_UNSIGNED_NUMBER:
-		out << (*( unsigned long long* )data);
+		out << (*( unsigned int* )data);
 		break;
 
 	}

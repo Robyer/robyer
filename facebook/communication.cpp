@@ -630,7 +630,12 @@ bool facebook_client::keep_online( )
 {
 	if ( parent->isOffline() )
 		return false;
-  
+
+  return home();
+
+  /*chat_state( true );
+  reconnect();
+
   handle_entry( "keep_online" );  
 
   http::response resp = flap( FACEBOOK_REQUEST_HOME , NULL );
@@ -648,7 +653,7 @@ bool facebook_client::keep_online( )
 	default:
 		return handle_error( "keep_online" );
 
-	}
+	}*/
 }
 
 bool facebook_client::keep_alive( )
@@ -792,8 +797,6 @@ bool facebook_client::chat_state( bool online )
 bool facebook_client::reconnect( )
 {
 	handle_entry( "reconnect" );
-
-  chat_state( true );
 
 	// Request reconnect
 	http::response resp = flap( FACEBOOK_REQUEST_RECONNECT );
