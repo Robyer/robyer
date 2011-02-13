@@ -48,7 +48,7 @@ void FacebookProto::ProcessBuddyList( void* data )
 
 	for ( List::Item< facebook_user >* i = facy.buddies.begin( ); i != NULL; )
 	{
-		LOG("      Now %s%s: %s", (i->data->status_id==ID_STATUS_ONLINE?"online":"offline"),(i->data->is_idle?" (idle)":""), i->data->real_name.c_str());
+		LOG("      Now %s%s: %s", (i->data->status_id==ID_STATUS_OFFLINE?"offline":"online"),(i->data->is_idle?" (idle)":""), i->data->real_name.c_str());
 
 		facebook_user* fu;
 

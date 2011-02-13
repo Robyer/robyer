@@ -58,8 +58,7 @@ void FacebookProto::SignOn(void*)
 
 		setDword( "LogonTS", (DWORD)time(NULL) );
 		m_hUpdLoop = ForkThreadEx( &FacebookProto::UpdateLoop,  this );
-		if ( m_iDesiredStatus != ID_STATUS_INVISIBLE )
-      m_hMsgLoop = ForkThreadEx( &FacebookProto::MessageLoop, this );
+    m_hMsgLoop = ForkThreadEx( &FacebookProto::MessageLoop, this );
 	}
 	ToggleStatusMenuItems(isOnline());
 
@@ -134,13 +133,9 @@ bool FacebookProto::NegotiateConnection( )
 	{
 		success = facy.login( user, pass );
 		if (success) success = facy.home( );
-		
-    if ( m_iDesiredStatus != ID_STATUS_INVISIBLE )
-    {
-		  if (success) success = facy.reconnect( );
-      if (success) success = facy.buddy_list( );
-    }
-
+    if (success) success = facy.chat_state( this->m_iDesiredStatus != ID_STATUS_INVISIBLE );
+    if (success) success = facy.reconnect( );
+    if (success) success = facy.buddy_list( );
 	}
 
 	if(!success)
@@ -180,9 +175,9 @@ void FacebookProto::UpdateLoop(void *)
 		if ( !isOnline( ) )
 			break;
 		if ( i != 0 )
-			if ( !facy.invisible_ )
+      if ( !facy.invisible_ )
         if ( !facy.buddy_list( ) )
-  				break;
+    		  break;
 		if ( !isOnline( ) )
 			break;
 		if ( i % 6 == 3 && getByte( FACEBOOK_KEY_EVENT_FEEDS_ENABLE, DEFAULT_EVENT_FEEDS_ENABLE ) )
@@ -220,8 +215,6 @@ void FacebookProto::MessageLoop(void *)
 			break;
 		if ( !facy.channel( ) )
 			break;
-    if ( facy.invisible_ )
-      break;
 		LOG( "***** FacebookProto::MessageLoop refreshing..." );
 	}
 

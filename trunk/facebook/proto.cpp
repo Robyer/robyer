@@ -3,7 +3,7 @@
 Facebook plugin for Miranda Instant Messenger
 _____________________________________________
 
-Copyright © 2009-11 Michal Zelinka
+Copyright ï¿½ 2009-11 Michal Zelinka
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -192,45 +192,51 @@ int FacebookProto::SetStatus( int new_status )
 
   if ( new_status == ID_STATUS_OFFLINE )
 	{
-		new_status = ID_STATUS_CONNECTING;
+    m_iStatus = facy.self_.status_id = ID_STATUS_CONNECTING;
+    ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS, 
+    (HANDLE)old_status,m_iStatus);
+
 		ForkThread( &FacebookProto::SignOff, this );
 	}
   else if ( old_status == ID_STATUS_OFFLINE )
   {
-    new_status = ID_STATUS_CONNECTING;
+    m_iStatus = facy.self_.status_id = ID_STATUS_CONNECTING;
+    ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS, 
+    (HANDLE)old_status,m_iStatus);
+
     ForkThread( &FacebookProto::SignOn, this );
   }
   else if ( old_status == ID_STATUS_INVISIBLE )
   {
+    m_iStatus = facy.self_.status_id = ID_STATUS_INVISIBLE;
+    ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS, 
+    (HANDLE)old_status,m_iStatus);
+
     facy.home( );
     facy.chat_state( true );
     facy.reconnect( );
     facy.buddy_list( );
-
-    m_hMsgLoop = ForkThreadEx( &FacebookProto::MessageLoop, this );
   }
   else if ( new_status == ID_STATUS_INVISIBLE )
   {
-    if(m_hMsgLoop)
-	  {
-  		LOG("***** Requesting MessageLoop to exit");
-		  WaitForSingleObject(m_hMsgLoop,IGNORE);
-		  ReleaseMutex(m_hMsgLoop);
-	  }
-   
+    m_iStatus = facy.self_.status_id = ID_STATUS_INVISIBLE;
+    ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS, 
+    (HANDLE)old_status,m_iStatus);
+
     facy.chat_state( false );
     this->SetAllContactStatuses( ID_STATUS_OFFLINE );
   }
   else if ( old_status == ID_STATUS_AWAY )
   {
-    facy.chat_state( true );
-    facy.reconnect( );
-  }
-
-  m_iStatus = facy.self_.status_id = new_status;
-  ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS, 
+    m_iStatus = facy.self_.status_id = ID_STATUS_ONLINE;
+    ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS, 
     (HANDLE)old_status,m_iStatus);
 
+    facy.chat_state( true );
+    facy.home( );
+    facy.reconnect( );
+  }
+  
 	return 0;
 }
 
