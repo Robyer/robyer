@@ -58,23 +58,23 @@ std::string utils::conversion::to_string( void* data, WORD type )
 
 	switch ( type )
 	{
+  	case UTILS_CONV_BOOLEAN:
+		  if (*( bool* )data)
+        return "true";
+		  else
+        return "false";
 
-	case UTILS_CONV_BOOLEAN:
-		if ( (*( bool* )data) == true ) return "true";
-		else return "false";
+    case UTILS_CONV_TIME_T:
+		  out << (*( time_t* )data);
+		  break;
 
-	case UTILS_CONV_TIME_T:
-		out << (*( time_t* )data);
-		break;
+	  case UTILS_CONV_SIGNED_NUMBER:
+  		out << (*( signed int* )data);
+		  break;
 
-	case UTILS_CONV_SIGNED_NUMBER:
-		out << (*( signed int* )data);
-		break;
-
-	case UTILS_CONV_UNSIGNED_NUMBER:
-		out << (*( unsigned int* )data);
-		break;
-
+	  case UTILS_CONV_UNSIGNED_NUMBER:
+  		out << (*( unsigned int* )data);
+		  break;
 	}
 
 	return out.str( );
@@ -85,7 +85,7 @@ void utils::text::replace_first( std::string* data, std::string from, std::strin
 	std::string::size_type position = 0;
 
 	if ( ( position = data->find(from, position) ) != std::string::npos )
-	{
+  {
 		data->replace( position, from.size(), to );
 		position++;
 	}
@@ -121,6 +121,7 @@ std::string utils::text::special_expressions_decode( std::string data )
 	utils::text::replace_all( &data, "&amp;", "&" );
 	utils::text::replace_all( &data, "&quot;", "\"" );
 	utils::text::replace_all( &data, "&#039;", "'" );
+  utils::text::replace_all( &data, "&#64;", "@" );
 	utils::text::replace_all( &data, "&lt;", "<" );
 	utils::text::replace_all( &data, "&gt;", ">" );
 
@@ -138,7 +139,8 @@ std::string utils::text::special_expressions_decode( std::string data )
 	// http://www.w3schools.com/tags/ref_entities.asp
 	// http://www.natural-innovations.com/wa/doc-charset.html
 	// http://webdesign.about.com/library/bl_htmlcodes.htm
-	return data;
+	
+  return data;
 }
 
 std::string utils::text::edit_html( std::string data )
@@ -149,11 +151,11 @@ std::string utils::text::edit_html( std::string data )
   
   while ( end != std::string::npos )
   {
-    end = data.find( "<span class=\"text_exposed_hide", start );
+    end = data.find( "<span class=\\\"text_exposed_hide", start );
     if ( end != std::string::npos )
     {
       new_string += data.substr( start, end - start );
-      start = data.find( "</span", end );
+      start = data.find( "<\\/span", end );
     } else {
       new_string += data.substr( start, data.length() - start );
     }
@@ -166,19 +168,47 @@ std::string utils::text::edit_html( std::string data )
 
   while ( end != std::string::npos )
   {
-    end = data.find( "<span class=\"uiTooltipText", start );
+    end = data.find( "<span class=\\\"uiTooltipText", start );
     if ( end != std::string::npos )
     {
       new_string += data.substr( start, end - start );
-      start = data.find( "</span", end );
-    } else {
+      start = data.find( "<\\/span", end );
+    }
+    else
+    {
       new_string += data.substr( start, data.length() - start );
     }
   }
-  
-  utils::text::replace_all( &new_string, "<br />", "\n" );
-  utils::text::replace_all( &new_string, "<br>", "\n" );
 
+  start = new_string.find( "class=\\\"uiAttachmentTitle", 0 );
+  if ( start != std::string::npos )
+  {
+    data = new_string.substr( 0, start );
+    data = utils::text::trim( data );
+
+    start = new_string.find( ">", start );
+    if ( start != std::string::npos )
+      new_string.insert(start+1, "\n\n");
+
+    start = new_string.find( "<\\/div>", start );
+    if ( start != std::string::npos )
+      new_string.insert(start, "\n");
+  }
+
+  start = new_string.find( "uiAttachmentDesc\\\"", 0 );
+  if ( start != std::string::npos )
+  {
+    start = new_string.find( ">", start );
+    if ( start != std::string::npos )
+      new_string.insert(start+1, "\n");
+
+    start = new_string.find( "<\\/div>", start );
+    if ( start != std::string::npos )
+      new_string.insert(start, "\n");
+  }
+  
+  utils::text::replace_all( &new_string, "<br \\/>", "\n" );
+  utils::text::replace_all( &new_string, "\n\n\n", "\n\n" );
 	return new_string;
 }
 
@@ -195,7 +225,7 @@ std::string utils::text::remove_html( std::string data )
 			continue;
 		}
 
-		new_string += data.at(i);
+    new_string += data.at(i);
 	}
 
 	return new_string;
@@ -211,19 +241,21 @@ std::string utils::text::slashu_to_utf8( std::string data )
 		{
 			unsigned int udn = strtol( data.substr( i + 2, 4 ).c_str(), NULL, 16 );
 
-			if ( udn >= 128 && udn <= 2047 ) // U+0080 .. U+07FF
-			{
+			if ( udn >= 128 && udn <= 2047 )
+			{ // U+0080 .. U+07FF
 				new_string += ( char )( 192 + ( udn / 64 ) );
 				new_string += ( char )( 128 + ( udn % 64 ) );
-			}
-			else if ( udn >= 2048 && udn <= 65535 ) // U+0800 .. U+FFFF
-			{
+			} 
+			else if ( udn >= 2048 && udn <= 65535 )
+			{ // U+0800 .. U+FFFF
 				new_string += ( char )( 224 + ( udn / 4096 ) );
 				new_string += ( char )( 128 + ( ( udn / 64 ) % 64 ) );
 				new_string += ( char )( 128 + ( udn % 64  ) );
 			}
-			else if ( udn <= 127 ) // U+0000 .. U+007F (should not appear)
+			else if ( udn <= 127 )
+      { // U+0000 .. U+007F (should not appear)
 				new_string += ( char )udn;
+      }
 
 			i += 5;
 			continue;
@@ -237,7 +269,7 @@ std::string utils::text::slashu_to_utf8( std::string data )
 
 std::string utils::text::trim( std::string data )
 {
-	std::string spaces = " \t"; // TODO: include "nbsp"
+	std::string spaces = " \t\r\n"; // TODO: include "nbsp"
 	std::string::size_type begin = data.find_first_not_of( spaces );
 	std::string::size_type end = data.find_last_not_of( spaces ) + 1;
 
@@ -252,8 +284,10 @@ std::string utils::text::source_get_value( std::string* data, unsigned int argum
 	
 	va_start( arg, argument_count );
 	
-	for ( unsigned int i = argument_count; i > 0; i-- ) {
-		if ( i == 1 ) {
+	for ( unsigned int i = argument_count; i > 0; i-- )
+  {
+		if ( i == 1 )
+    {
 			end = data->find( va_arg( arg, char* ), start );
 			if ( start == std::string::npos || end == std::string::npos )
 				break;
@@ -283,11 +317,6 @@ void utils::debug::info( const char* info, HWND parent )
 		parent, FBInfoDialogProc, ( LPARAM )mir_strdup(info) );
 }
 
-void utils::debug::test( FacebookProto* fbp )
-{
-	return;
-}
-
 int utils::debug::log(std::string file_name, std::string text)
 {
 	char szFile[MAX_PATH];
@@ -298,10 +327,10 @@ int utils::debug::log(std::string file_name, std::string text)
 	path = path + file_name.c_str() + ".txt";
 
 	SYSTEMTIME time;
-	GetSystemTime( &time );
+	GetLocalTime( &time );
 
 	std::ofstream out( path.c_str(), std::ios_base::out | std::ios_base::app | std::ios_base::ate );
-	out << "[" << (time.wHour < 10 ? "0" : "") << time.wHour << ":" << (time.wMinute < 10 ? "0" : "") << time.wMinute << ":" << (time.wSecond < 10 ? "0" : "") << time.wSecond << "] " << text << std::endl;
+  out << "[" << (time.wHour < 10 ? "0" : "") << time.wHour << ":" << (time.wMinute < 10 ? "0" : "") << time.wMinute << ":" << (time.wSecond < 10 ? "0" : "") << time.wSecond << "] " << text << std::endl;
 	out.close( );
 
 	return EXIT_SUCCESS;

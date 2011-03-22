@@ -29,36 +29,27 @@ Last change on : $Date$
 
 // Version management
 #include "build.h"
-#define __VERSION_DWORD             PLUGIN_MAKE_VERSION(0, 0, 2, 0)
+#define __VERSION_DWORD             PLUGIN_MAKE_VERSION(0, 0, 2, 4)
 #define __PRODUCT_DWORD             PLUGIN_MAKE_VERSION(0, 9, 14, 0)
-#define __VERSION_STRING            "0.0.2.0"
+#define __VERSION_STRING            "0.0.2.4"
 #define __PRODUCT_STRING            "0.9.14.0"
-#define __VERSION_VS_FILE           0,0,2,0
+#define __VERSION_VS_FILE           0,0,2,4
 #define __VERSION_VS_PROD           0,9,14,0
-#define __VERSION_VS_FILE_STRING    "0, 0, 2, 0"
+#define __VERSION_VS_FILE_STRING    "0, 0, 2, 4"
 #define __VERSION_VS_PROD_STRING    "0, 9, 14, 0"
-//#define __API_VERSION_STRING        "3.1"
-
-// API versions
-// 3.1 -- minor change in Logout procedure
-// 3.0 -- lots of source changes on Facebook site
-// 2.1 -- minor Facebook Chat server URLs change
-// 2.0 -- major Facebook redesign
-// 1.3 -- m.facebook.com profile change of syntax
-// 1.2 -- buddy_list updates allow non-cumulative update data
-// 1.1 -- buddy_list now includes some reduntant data
-// 1.0 -- initial implementation
 
 // Product management
 #define FACEBOOK_NAME               "Facebook"
 #define FACEBOOK_URL_HOMEPAGE       "http://www.facebook.com/"
-#define FACEBOOK_URL_REQUESTS       "http://www.facebook.com/reqs.php"
+#define FACEBOOK_URL_REQUESTS       "http://www.facebook.com/n/?reqs.php"
 #define FACEBOOK_URL_MESSAGES       "http://www.facebook.com/n/?inbox"
-//#define PLUGIN_HOSTING_URL          "http://code.google.com/p/eternityplugins/"
+#define FACEBOOK_URL_NOTIFICATIONS  "http://www.facebook.com/n/?notifications.php"
+#define FACEBOOK_URL_PROFILE        "http://www.facebook.com/profile.php?id="
+#define FACEBOOK_URL_GROUP          "http://www.facebook.com/n/?home.php&sk=group_"
 
 // Connection
 #define FACEBOOK_SERVER_REGULAR     "www.facebook.com"
-#define FACEBOOK_SERVER_MOBILE      "m.facebook.com"
+//#define FACEBOOK_SERVER_MOBILE      "m.facebook.com"
 #define FACEBOOK_SERVER_CHAT        "%s.%s.facebook.com"
 #define FACEBOOK_SERVER_LOGIN       "login.facebook.com"
 #define FACEBOOK_SERVER_APPS        "apps.facebook.com"
@@ -118,31 +109,32 @@ Last change on : $Date$
 #define FACEBOOK_REQUEST_SETTINGS               305 // closing message window, setting chat visibility
 
 // Reconnect flags
-#define FACEBOOK_RECONNECT_LOGIN        "6" // When logging in // TODO: 5?
-#define FACEBOOK_RECONNECT_KEEP_ALIVE   "0" // After a period, used to keep session alive // TODO: 6?
-// TODO: And what about 7? :))
+#define FACEBOOK_RECONNECT_LOGIN        "6" // When logging in
+#define FACEBOOK_RECONNECT_KEEP_ALIVE   "0" // After a period, used to keep session alive
+
+// News Feed types
+static const struct
+{
+	char *name;
+	char *id;
+} feed_types[] = {
+	{ "Most Recent", "lf" },
+	{ "Status Updates", "app_2915120374" },
+	{ "Top News", "h" },
+};
 
 // User-Agents
-static const char* user_agents[] = {
-	"Miranda IM (default)",
-//	"FacebookTouch2.5",
-//	"Facebook/2.5 CFNetwork/342.1 Darwin/9.4.1",
-//	"Lynx/2.8.4rel.1 libwww-FM/2.14",
-	"Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0)",
-	"Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)",
-//	"Mozilla/4.08 [en] (WinNT; U ;Nav)",
-	"Mozilla/5.0 (Windows NT 6.1; rv:2.0) Gecko/20100101 Firefox/4.0",
-//	"Opera/8.01 (J2ME/MIDP; Opera Mini/3.0.6306/1528; nb; U; ssr)",
-//	"Opera/9.27 (Windows NT 5.1; U; en)",
-//	"Opera/9.64 (Windows NT 5.1; U; en)",
-	"Opera/9.80 (Windows NT 5.1; U; en) Presto/2.7.62 Version/11.01",
-	"Opera/9.80 (Macintosh; Intel Mac OS X 10.5.8; U; en) Presto/2.7.62 Version/11.01",
-	"Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_7; en-us) AppleWebKit/534.16+ (KHTML, like Gecko) Version/5.0.3 Safari/533.19.4",
-	"Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/534.19 (KHTML, like Gecko) Chrome/11.0.661.0 Safari/534.19",
-//	"Mozilla/5.0 (iPod; U; CPU iPhone OS 2_2_1 like Mac OS X; en-us) AppleWebKit/525.18.1 (KHTML, like Gecko) Version/3.1.1 Mobile/5H11a Safari/525.20",
-//	"HTC-8900/1.2 Mozilla/4.0 (compatible; MSIE 6.0; Windows CE; IEMobile 7.6) UP.Link/6.3.0.0.0",
-//	"BlackBerry8320/4.3.1 Profile/MIDP-2.0 Configuration/CLDC-1.1",
-//	"Opera/9.60 (J2ME/MIDP; Opera Mini/4.2.13337/504; U; en) Presto/2.2.0",
-//	"Nokia6230/2.0+(04.43)+Profile/MIDP-2.0+Configuration/CLDC-1.1+UP.Link/6.3.0.0.0",
-//	"Mozilla/5.0 (webOS/1.0; U; en-US) AppleWebKit/525.27.1 (KHTML, like Gecko) Version/1.0 Safari/525.27.1 Pre/1.0",
+static const struct
+{
+	char *name;
+	char *id;
+} user_agents[] = {
+  { "Miranda IM (default)", "Miranda IM (default)" },
+	{ "Internet Explorer 8", "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0)" },
+	{ "Internet Explorer 9", "Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)" },
+	{ "Mozilla Firefox 4.0", "Mozilla/5.0 (Windows NT 6.1; rv:2.0) Gecko/20100101 Firefox/4.0" },
+	{ "Opera 11.01 (Windows XP)", "Opera/9.80 (Windows NT 5.1; U; en) Presto/2.7.62 Version/11.01" },
+	{ "Opera 11.01 (Mac OS X 10.5.8)", "Opera/9.80 (Macintosh; Intel Mac OS X 10.5.8; U; en) Presto/2.7.62 Version/11.01" },
+	{ "Safari 5.0.3 (Mac OS X 10.5.8)", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_7; en-us) AppleWebKit/534.16+ (KHTML, like Gecko) Version/5.0.3 Safari/533.19.4" },
+	{ "Google Chrome 11.0.661 (Windows XP)", "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/534.19 (KHTML, like Gecko) Chrome/11.0.661.0 Safari/534.19" },
 };

@@ -29,9 +29,10 @@ Last change on : $Date: 2011-02-07 18:19:39 +0100 (po, 07 2 2011) $
 
 struct send_direct
 {
-	send_direct(HANDLE hContact,const std::string &msg) : hContact(hContact),msg(msg) {}
+	send_direct(HANDLE hContact,const std::string &msg, HANDLE msgid) : hContact(hContact),msg(msg),msgid(msgid) {}
 	HANDLE hContact;
 	std::string msg;
+	HANDLE msgid;
 };
 
 struct send_typing
@@ -45,10 +46,12 @@ int FacebookProto::RecvMsg(HANDLE hContact, PROTORECVEVENT *pre)
 {
 	DBVARIANT dbv;
 
-	if( !DBGetContactSettingString(hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv) ) {
+	if( !DBGetContactSettingString(hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv) )
+  {
 		std::string* data = new std::string( dbv.pszVal );
 		ForkThread( &FacebookProto::CloseChatWorker, this, (void*)data );
-		DBFreeVariant(&dbv); }
+		DBFreeVariant(&dbv);
+  }
 
 	CallService(MS_PROTO_CONTACTISTYPING, (WPARAM)hContact, (LPARAM)PROTOTYPE_CONTACTTYPING_OFF);
 
@@ -58,18 +61,38 @@ int FacebookProto::RecvMsg(HANDLE hContact, PROTORECVEVENT *pre)
 
 void FacebookProto::SendMsgWorker(void *p)
 {
-	if(p == NULL)
+  if(p == NULL)
 		return;
+  
+  ScopedLock s( facy.send_message_lock_ );
 
-	send_direct *data = static_cast<send_direct*>(p);
+  send_direct *data = static_cast<send_direct*>(p);
 
 	DBVARIANT dbv;
-	if( !DBGetContactSettingString(data->hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv) )
-	{
-		if ( facy.send_message(dbv.pszVal, data->msg) )
-			ProtoBroadcastAck(m_szModuleName,data->hContact,ACKTYPE_MESSAGE,ACKRESULT_SUCCESS, (HANDLE)1,0);
+
+  if ( !isOnline( ) )
+  {
+    ProtoBroadcastAck(m_szModuleName, data->hContact, ACKTYPE_MESSAGE, ACKRESULT_FAILED, data->msgid, (LPARAM)Translate("You cannot send messages when you are offline."));
+  }
+  else if ( DBGetContactSettingWord( data->hContact, m_szModuleName, "Status", ID_STATUS_OFFLINE ) == ID_STATUS_OFFLINE )
+  {
+    ProtoBroadcastAck(m_szModuleName, data->hContact, ACKTYPE_MESSAGE, ACKRESULT_FAILED, data->msgid, (LPARAM)Translate("Facebook protocol don't support offline messages."));
+
+    if( !DBGetContactSettingString(data->hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv) )
+    { // RM TODO: remove when New Messages      
+      std::string url = "http://www.facebook.com/n/?messages/";
+      url += dbv.pszVal;
+      TCHAR* szUrl = mir_a2t_cp(url.c_str(), CP_UTF8);    
+      NotifyEvent(m_tszUserName,TranslateT("Click here if you want to send message through Facebook website."),NULL,FACEBOOK_EVENT_CLIENT,szUrl);
+      DBFreeVariant(&dbv);
+    }
+  }
+  else if( !DBGetContactSettingString(data->hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv) )
+  {
+    if ( facy.send_message(dbv.pszVal, data->msg) )
+      ProtoBroadcastAck(m_szModuleName,data->hContact,ACKTYPE_MESSAGE,ACKRESULT_SUCCESS, data->msgid,0);
 		else
-			ProtoBroadcastAck(m_szModuleName,data->hContact,ACKTYPE_MESSAGE,ACKRESULT_FAILED, (HANDLE)1,(LPARAM)Translate("Error with sending message."));
+      ProtoBroadcastAck(m_szModuleName,data->hContact,ACKTYPE_MESSAGE,ACKRESULT_FAILED, data->msgid,(LPARAM)Translate("Error with sending message."));
 
 		std::string* data = new std::string( dbv.pszVal );
 		CloseChatWorker( (void*)data );
@@ -81,28 +104,19 @@ void FacebookProto::SendMsgWorker(void *p)
 
 int FacebookProto::SendMsg(HANDLE hContact, int flags, const char *msg)
 {
-	if ( !isOnline( ) ) {
-		ProtoBroadcastAck(m_szModuleName, hContact, ACKTYPE_MESSAGE, ACKRESULT_FAILED, (HANDLE)1, (LPARAM)Translate("You cannot send messages when you are offline."));
-		return 0; }
-
-	if ( DBGetContactSettingWord( hContact, m_szModuleName, "Status", ID_STATUS_OFFLINE ) == ID_STATUS_OFFLINE ) {
-		ProtoBroadcastAck(m_szModuleName, hContact, ACKTYPE_MESSAGE, ACKRESULT_FAILED, (HANDLE)1, (LPARAM)Translate("Facebook protocol don't support offline messages."));
-		return 0; }
-
 	// TODO: msg comes as Unicode (retyped wchar_t*), why should we convert it as ANSI to UTF-8? o_O
 	if ( flags & PREF_UNICODE )
-        msg = mir_utf8encode(msg);
-
-	ForkThread( &FacebookProto::SendMsgWorker, this,new send_direct(hContact,msg) );
-
-	return 1;
+    msg = mir_utf8encode(msg);
+  
+  facy.msgid_ = (facy.msgid_ % 1024)+1;
+  ForkThread( &FacebookProto::SendMsgWorker, this,new send_direct(hContact,msg,(HANDLE)facy.msgid_) );
+  return facy.msgid_;
 }
 
 int FacebookProto::UserIsTyping(HANDLE hContact,int type)
 { 
 	if (hContact && isOnline())
 		ForkThread(&FacebookProto::SendTypingWorker, this,new send_typing(hContact,type));
-		// TODO: Thread required?
 
 	return 0;
 }
@@ -114,6 +128,15 @@ void FacebookProto::SendTypingWorker(void *p)
 
 	send_typing *typing = static_cast<send_typing*>(p);
 
+  // RM TODO: maybe better send typing optimalization
+  facy.is_typing_ = (typing->status == PROTOTYPE_SELFTYPING_ON);
+  SleepEx( 2000, true );
+
+  if ( !facy.is_typing_ == (typing->status == PROTOTYPE_SELFTYPING_ON) )
+  {
+    delete typing;
+    return;
+  }
 		
 	DBVARIANT dbv;
 	if( !DBGetContactSettingString(typing->hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv) )
@@ -128,9 +151,6 @@ void FacebookProto::SendTypingWorker(void *p)
 		data += ( facy.post_form_id_.length( ) ) ? facy.post_form_id_ : "0";
 		data += "&post_form_id_source=AsyncRequest";
 
-		// RM TODO: pokud offline:1  ... user is offline...   ale spÌö asi ne, protoûe to Ëasto na fb jebe, û eto ¯ekne ûe je off ikdyû vlastnÏ nenÌ...
-		// for (;;);{"error":0,"errorSummary":"","errorDescription":"","errorIsWarning":false,"silentError":0,"payload":{"offline":1}}
-
 		http::response resp = facy.flap( FACEBOOK_REQUEST_TYPING_SEND, &data );
 
 		DBFreeVariant(&dbv);
@@ -144,8 +164,8 @@ void FacebookProto::CloseChatWorker(void *p)
 	if (p == NULL)
 		return;
 
-	if ( DBGetContactSettingByte(NULL, m_szModuleName, FACEBOOK_KEY_CLOSE_WINDOWS_ENABLE, DEFAULT_CLOSE_WINDOWS_ENABLE ) == TRUE )
-		facy.close_chat( *(std::string*)p );
+	if ( DBGetContactSettingByte(NULL, m_szModuleName, FACEBOOK_KEY_CLOSE_WINDOWS_ENABLE, DEFAULT_CLOSE_WINDOWS_ENABLE ) )
+    facy.close_chat( *(std::string*)p );
 
 	delete p;
 }

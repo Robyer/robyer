@@ -29,12 +29,13 @@ Last change on : $Date: 2011-01-08 11:10:34 +0100 (so, 08 1 2011) $
 
 void FacebookProto::UpdateAvatarWorker(void *p)
 {
-	// if(p == NULL) return; // RM TODO: tohle má bejt zakomentovaný
+	if(p == NULL)
+    return;
 
 	std::auto_ptr<update_avatar> data( static_cast<update_avatar*>(p) );
 	DBVARIANT dbv;
 
-	if(!DBGetContactSettingString(data->hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv))
+	if( !DBGetContactSettingString(data->hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv) )
 	{
 		std::string new_url = data->url;
 		std::string ext = new_url.substr(new_url.rfind('.'));
@@ -55,11 +56,9 @@ void FacebookProto::UpdateAvatarWorker(void *p)
 		else
 		{
 			if(facy.save_url(new_url,filename))
-				ProtoBroadcastAck(m_szModuleName,data->hContact,ACKTYPE_AVATAR,
-					ACKRESULT_SUCCESS,&ai,0);
+				ProtoBroadcastAck(m_szModuleName,data->hContact,ACKTYPE_AVATAR, ACKRESULT_SUCCESS,&ai,0);
 			else
-				ProtoBroadcastAck(m_szModuleName,data->hContact,ACKTYPE_AVATAR,
-					ACKRESULT_FAILED, &ai,0);
+				ProtoBroadcastAck(m_szModuleName,data->hContact,ACKTYPE_AVATAR, ACKRESULT_FAILED, &ai,0);
 			LOG("***** Done avatar: %s",data->url.c_str());
 		}
 	}
@@ -68,13 +67,47 @@ void FacebookProto::UpdateAvatarWorker(void *p)
 std::string FacebookProto::GetAvatarFolder()
 {
 	char path[MAX_PATH];
-	if(hAvatarFolder_ && FoldersGetCustomPath(hAvatarFolder_,path,sizeof(path), "") == 0)
+	if( hAvatarFolder_ && FoldersGetCustomPath(hAvatarFolder_,path,sizeof(path), "") == 0 )
 		return path;
 	else
 		return def_avatar_folder_;
 }
 
-INT_PTR FacebookProto::GetMyAvatar(WPARAM wParam, LPARAM lParam)
+int FacebookProto::GetAvatarInfo(WPARAM wParam, LPARAM lParam)
+{
+  PROTO_AVATAR_INFORMATION* AI = ( PROTO_AVATAR_INFORMATION* )lParam;
+	DBVARIANT dbv;
+	std::string avatar_url;
+
+  if ( !DBGetContactSettingString( AI->hContact,m_szModuleName,FACEBOOK_KEY_AV_URL,&dbv ) )
+	{
+		if ( strlen( dbv.pszVal ) == 0 )
+      return GAIR_NOAVATAR;
+
+		std::string avatar_url = dbv.pszVal;
+		DBFreeVariant(&dbv);
+
+		if ( !DBGetContactSettingString( AI->hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv ) )
+		{
+			std::string ext = avatar_url.substr(avatar_url.rfind('.'));
+			std::string file_name = GetAvatarFolder() + '\\' + dbv.pszVal + ext;
+			DBFreeVariant(&dbv);
+
+      AI->format = ext_to_format(ext);
+
+			if ( file_name.length() )
+      {
+        strncpy((char*)AI->filename, file_name.c_str(), (int)AI->cbSize);
+
+        if (!_access((char*)AI->filename, 0))
+          return GAIR_SUCCESS;
+		  }
+  	}
+  }
+  return GAIR_NOAVATAR;
+}
+
+int FacebookProto::GetMyAvatar(WPARAM wParam, LPARAM lParam)
 {
 	if (!wParam) return -3;
 
@@ -101,8 +134,10 @@ INT_PTR FacebookProto::GetMyAvatar(WPARAM wParam, LPARAM lParam)
 			if ( file_name.length() )
 				strncpy((char*)wParam, file_name.c_str(), (int)lParam);
 
-      if (!_access((char*)wParam, 0)) return 0; // Avatar file exists
-			return -1; // Avatar file doesn't exist
+      if (!_access((char*)wParam, 0))
+        return 0; // Avatar file exists
+			
+      return -1; // Avatar file doesn't exist
 		}
 	}
 	return -2; // No avatar set
@@ -112,11 +147,13 @@ bool FacebookProto::AvatarExists(std::string user_id)
 {
 	std::string base = GetAvatarFolder() + '\\' + user_id;
 
-	for ( BYTE i = 0; i < SIZEOF(extensions); i++ ) {
+	for ( BYTE i = 0; i < SIZEOF(extensions); i++ )
+  {
 		std::string file_name = base + extensions[i];
     int ret = _access(file_name.c_str(), 0);
 		if (!ret)
-			return true; } // Avatar file exists, we doesn't need refresh
+			return true; // Avatar file exists, we doesn't need refresh
+  } 
 
 	return false; // Avatar file doesn't exist, we need refresh
 }

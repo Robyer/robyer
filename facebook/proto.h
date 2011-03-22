@@ -115,17 +115,22 @@ public:
 	int  __cdecl GetMyAwayMsg( WPARAM, LPARAM );
 	int  __cdecl SetMyAwayMsg( WPARAM, LPARAM );
 	int  __cdecl SvcCreateAccMgrUI( WPARAM, LPARAM );
-	INT_PTR  __cdecl GetMyAvatar(WPARAM, LPARAM );
+	int  __cdecl GetMyAvatar(WPARAM, LPARAM );
+  int  __cdecl GetAvatarInfo(WPARAM, LPARAM );
+  int  __cdecl VisitProfile(WPARAM, LPARAM );
 
 	// Events
 	int  __cdecl OnModulesLoaded(WPARAM, LPARAM);
 	int  __cdecl OnOptionsInit(WPARAM, LPARAM);
-	int  __cdecl OnBuildStatusMenu(WPARAM wParam,LPARAM lParam);
-	int  __cdecl OnBuildContactMenu(WPARAM,LPARAM);
+	int  __cdecl OnBuildStatusMenu(WPARAM,LPARAM);
 	int  __cdecl OnContactDeleted(WPARAM,LPARAM);
 	int  __cdecl OnMind(WPARAM,LPARAM);
 	int  __cdecl OnPreShutdown(WPARAM,LPARAM);
-	int  __cdecl OnIdleChanged(WPARAM,LPARAM);
+  int  __cdecl OnPrebuildContactMenu(WPARAM,LPARAM);
+  // RM TODO: Chat handling
+  /*  int  __cdecl OnChatOutgoing(WPARAM,LPARAM);
+	int  __cdecl OnJoinChat(WPARAM,LPARAM);
+	int  __cdecl OnLeaveChat(WPARAM,LPARAM);*/
 
 	// Loops
 	bool    NegotiateConnection( );
@@ -142,6 +147,7 @@ public:
 
 	// Worker threads
 	void __cdecl SignOn(void *);
+  void __cdecl ChangeStatus(void *);
 	void __cdecl SignOff(void *);
 	void __cdecl GetAwayMsgWorker(void *);
 	void __cdecl SetAwayMsgWorker(void *);
@@ -152,15 +158,21 @@ public:
 	void __cdecl CloseChatWorker(void *); // TODO: Thread required?
 
 	// Contacts handling
-	bool    IsMyContact(HANDLE);
+	bool    IsMyContact(HANDLE, bool include_chat = false);
 	HANDLE  ContactIDToHContact(std::string);
 	HANDLE  AddToContactList(facebook_user*);
 	void    SetAllContactStatuses(int);
 	bool    ContactNeedsUpdate(facebook_user*);
 
+  // RM TODO: Chats handling
+ 	/*void AddChat(const char *id,const char *name);
+  void UpdateChat(const facebook_user &update);
+	void AddChatContact(const char *name,const char *nick=0);
+	void DeleteChatContact(const char *name);
+	void SetChatStatus(int);*/
+
 	// Connection client
 	facebook_client facy; // TODO: Refactor to "client" and make dynamic
-	int __cdecl Test( WPARAM, LPARAM );
 
 	// Helpers
 	std::string GetAvatarFolder();

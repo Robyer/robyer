@@ -89,8 +89,6 @@ int FacebookProto::GetInfo( HANDLE hContact, int infoType )
 	return 1;
 }
 
-
-
 HANDLE FacebookProto::SearchBasic( const PROTOCHAR* id )
 {
 	return 0;

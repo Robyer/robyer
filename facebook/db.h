@@ -50,6 +50,7 @@ Last change on : $Date: 2011-01-08 11:10:34 +0100 (so, 08 1 2011) $
 #define FACEBOOK_KEY_UPD_NAMES      "UpdateNames"
 #define FACEBOOK_KEY_DEVICE_ID      "DeviceID"
 #define FACEBOOK_KEY_AV_URL         "AvatarURL"
+#define FACEBOOK_KEY_AV_THUMB_URL   "AvatarThumbURL"
 
 #define FACEBOOK_KEY_DEF_GROUP      "DefaultGroup"
 #define FACEBOOK_KEY_USER_AGENT     "UserAgent"
@@ -68,6 +69,7 @@ Last change on : $Date: 2011-01-08 11:10:34 +0100 (so, 08 1 2011) $
 #define FACEBOOK_KEY_EVENT_FEEDS_ENABLE             "EventFeedsEnable"
 #define FACEBOOK_KEY_EVENT_OTHER_ENABLE             "EventOtherEnable"
 #define FACEBOOK_KEY_EVENT_CLIENT_ENABLE            "EventClientEnable"
+#define FACEBOOK_KEY_FEED_TYPE                      "EventFeedsType"
 
 #define FACEBOOK_KEY_EVENT_NOTIFICATIONS_COLBACK    "PopupNotificationsColorBack"
 #define FACEBOOK_KEY_EVENT_NOTIFICATIONS_COLTEXT    "PopupNotificationsColorText"
