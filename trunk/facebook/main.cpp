@@ -41,13 +41,17 @@ DWORD g_mirandaVersion;
 
 PLUGININFOEX pluginInfo = {
 	sizeof(PLUGININFOEX),
-	"Facebook Protocol RM",
+  #ifdef _WIN64
+	  "Facebook Protocol RM x64",
+  #else
+	  "Facebook Protocol RM",
+  #endif    	
 	__VERSION_DWORD,
 	"Provides basic support for Facebook Chat protocol. [Built: "__DATE__" "__TIME__"]",
 	"Robert Posel",
 	"robyer@seznam.cz",
 	"(c) 2009-11 Michal Zelinka, 2011 Robert Posel",
-	"http://robyer.info/",
+	"http://code.google.com/p/robyer/",
 	UNICODE_AWARE, //not transient
 	0,             //doesn't replace anything built-in
 	// {8432B009-FF32-4727-AAE6-A9035038FD58}
@@ -93,14 +97,14 @@ extern "C" __declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD miranda
 	return &pluginInfo;
 }
 
-extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion)
+/*extern "C" __declspec(dllexport) PLUGININFO* MirandaPluginInfo(DWORD mirandaVersion)
 {
 	// TODO: Make product version controlled via definitions
 	MessageBox(0,_T("The Facebook protocol plugin cannot be loaded. ")
 		_T("It requires Miranda IM 0.9.14 or later."),_T("Miranda"),
 		MB_OK|MB_ICONWARNING|MB_SETFOREGROUND|MB_TOPMOST);
 	return NULL;
-}
+}*/
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // Interface information
@@ -131,24 +135,30 @@ int OnModulesLoaded(WPARAM,LPARAM)
 {
 	if ( ServiceExists( MS_UPDATE_REGISTER ) )
 	{
-		/*Update upd = {sizeof(upd)};
+		Update upd = {sizeof(upd)};
 		char curr_version[30];
 
 		upd.szComponentName = pluginInfo.shortName;
 		upd.szUpdateURL = UPDATER_AUTOREGISTER;
-		upd.szBetaVersionURL     = "http://dev.miranda.im/~jarvis/";
-		upd.szBetaChangelogURL   = "http://dev.miranda.im/~jarvis/";
-		upd.pbBetaVersionPrefix  = reinterpret_cast<BYTE*>("Facebook</a> ");
-		upd.cpbBetaVersionPrefix = strlen(reinterpret_cast<char*>(upd.pbBetaVersionPrefix));
-		upd.szBetaUpdateURL      = "http://dev.miranda.im/~jarvis/";
+		upd.szBetaVersionURL     = "http://robyer.info/miranda/facebookRM/version.html";
+		upd.szBetaChangelogURL   = "http://robyer.info/miranda/facebookRM/changelog.html";
+		upd.pbBetaVersionPrefix  = reinterpret_cast<BYTE*>("Facebook RM ");
+		upd.cpbBetaVersionPrefix = (int)strlen(reinterpret_cast<char*>(upd.pbBetaVersionPrefix));
+		#ifdef _WIN64
+		  upd.szBetaUpdateURL      = "http://robyer.info/stahni/facebookRM_x64.zip";    
+    #else
+		  upd.szBetaUpdateURL      = "http://robyer.info/stahni/facebookRM.zip";  
+    #endif    
 		upd.pbVersion = reinterpret_cast<BYTE*>( CreateVersionStringPlugin(
 			reinterpret_cast<PLUGININFO*>(&pluginInfo),curr_version) );
-		upd.cpbVersion = strlen(reinterpret_cast<char*>(upd.pbVersion));
-		CallService(MS_UPDATE_REGISTER,0,(LPARAM)&upd);*/
+		upd.cpbVersion = (int)strlen(reinterpret_cast<char*>(upd.pbVersion));
+		CallService(MS_UPDATE_REGISTER,0,(LPARAM)&upd);
 	}
 
 	return 0;
 }
+
+static HANDLE g_hEvents[1];
 
 extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 {
@@ -171,10 +181,10 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	pd.fnUninit = protoUninit;
 	CallService(MS_PROTO_REGISTERMODULE,0,reinterpret_cast<LPARAM>(&pd));
 
-	HookEvent(ME_SYSTEM_MODULESLOADED,OnModulesLoaded);
+	g_hEvents[0] = HookEvent(ME_SYSTEM_MODULESLOADED,OnModulesLoaded);
 
 	InitIcons();
-	//InitContactMenus();
+	InitContactMenus();
 
 	// Init native User-Agent
 	{
@@ -193,7 +203,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 		g_strUserAgent = agent.str( );
 	}
 
-    return 0;
+  return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -201,6 +211,9 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 
 extern "C" int __declspec(dllexport) Unload(void)
 {
-	//UninitContactMenus();
+	UninitContactMenus();
+  for(size_t i=1; i<SIZEOF(g_hEvents); i++)
+		UnhookEvent(g_hEvents[i]);
+
 	return 0;
 }

@@ -20,7 +20,6 @@
 #define IDC_POLLRATE                    1023
 #define IDC_SECURE                      1024
 #define IDC_CLOSE_WINDOWS               1025
-#define IDC_SET_STATUS                  1126
 #define IDC_LOGGING                     1027
 #define IDC_COOKIES                     1028
 #define IDC_NOTIFICATIONS_ENABLE        1041
@@ -50,6 +49,9 @@
 #define IDC_SYSTRAY_NOTIFY              1098
 #define IDC_PREVIEW                     1099
 #define IDC_DEBUGINFO                   1101
+#define IDC_SET_STATUS                  1126
+#define IDC_FEEDS_TYPE                  1201
+#define IDC_FEED_TYPE                   1201
 
 // Next default values for new objects
 // 
@@ -57,7 +59,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        121
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1201
+#define _APS_NEXT_CONTROL_VALUE         1202
 #define _APS_NEXT_SYMED_VALUE           131
 #endif
 #endif

@@ -30,16 +30,18 @@ Last change on : $Date: 2011-01-08 11:10:34 +0100 (so, 08 1 2011) $
 void FacebookProto::KillThreads( )
 {
 	// Kill the old threads if they are still around
-	if(m_hMsgLoop)
+	if(m_hMsgLoop != NULL)
 	{
-		LOG("***** Requesting MessageLoop to exit");
+		LOG("***** Requesting MessageLoop to exit... %d", m_hMsgLoop );
 		WaitForSingleObject(m_hMsgLoop,IGNORE);
+    TerminateThread(m_hMsgLoop, 0);
 		ReleaseMutex(m_hMsgLoop);
 	}
-	if(m_hUpdLoop)
+	if(m_hUpdLoop != NULL)
 	{
 		LOG("***** Requesting UpdateLoop to exit");
 		WaitForSingleObject(m_hUpdLoop,IGNORE);
+    TerminateThread(m_hUpdLoop, 0);
 		ReleaseMutex(m_hUpdLoop);
 	}
 }
@@ -53,16 +55,38 @@ void FacebookProto::SignOn(void*)
 
 	if ( NegotiateConnection( ) )
 	{
-		if (!getByte(FACEBOOK_KEY_SHOW_OLD_FEEDS, DEFAULT_SHOW_OLD_FEEDS))
+    if (!getByte(FACEBOOK_KEY_SHOW_OLD_FEEDS, DEFAULT_SHOW_OLD_FEEDS))
 			facy.last_feeds_update_ = ::time( NULL );
 
 		setDword( "LogonTS", (DWORD)time(NULL) );
 		m_hUpdLoop = ForkThreadEx( &FacebookProto::UpdateLoop,  this );
     m_hMsgLoop = ForkThreadEx( &FacebookProto::MessageLoop, this );
+
+    LOG("***** Started messageloop thread handle %d", m_hMsgLoop);
 	}
 	ToggleStatusMenuItems(isOnline());
 
 	LOG("***** SignOn complete");
+}
+
+// RM TODO: this is only for switch to invisible now, change it to use for other statuses too
+void FacebookProto::ChangeStatus(void*)
+{
+	ScopedLock s(signon_lock_);
+	LOG("***** Beginning ChangeStatus process");
+
+  int old_status = m_iStatus;	
+
+  facy.home( );
+  facy.chat_state( true );
+  facy.reconnect( );
+  facy.buddy_list( );
+
+  m_iStatus = facy.self_.status_id = m_iDesiredStatus;
+	ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS,
+	(HANDLE)old_status,m_iStatus);
+
+	LOG("***** ChangeStatus complete");
 }
 
 void FacebookProto::SignOff(void*)
@@ -167,8 +191,9 @@ error:
 
 void FacebookProto::UpdateLoop(void *)
 {
-	ScopedLock s(update_loop_lock_); // TODO: Required?
-	LOG( ">>>>> Entering Facebook::UpdateLoop" );
+	//ScopedLock s(update_loop_lock_); // TODO: Required?
+  time_t tim = ::time(NULL);
+	LOG( ">>>>> Entering Facebook::UpdateLoop [%d]", tim );
 
 	for ( DWORD i = 0; ; i = ++i % 48 )
 	{
@@ -185,40 +210,35 @@ void FacebookProto::UpdateLoop(void *)
 				break;
 		if ( !isOnline( ) )
 			break;
-		if ( i % 8 == 7 ) // TODO: More often? Another solution?
-			if ( !facy.invisible_ )
-        if ( !facy.keep_alive( ) )
-				  break;
-    if ( i % 8 == 6 )
+    if ( i % 8 == 7 )
       if ( !facy.idle_ )
-			  if ( !facy.keep_online( ) )
-  				break;
-		if ( !isOnline( ) )
-			break;
-		LOG( "***** FacebookProto::UpdateLoop going to sleep..." );
+			  facy.chat_first_touch_ = true;
+		/*if ( !facy.invisible_ )
+        if ( !facy.keep_alive( ) )
+				  break;*/
+		LOG( "***** FacebookProto::UpdateLoop [%d] going to sleep...", tim );
 		if ( SleepEx( GetPollRate( ) * 1000, true ) == WAIT_IO_COMPLETION )
 			break;
-		LOG( "***** FacebookProto::UpdateLoop waking up..." );
+		LOG( "***** FacebookProto::UpdateLoop [%d] waking up...", tim );
 	}
 
-	LOG( "<<<<< Exiting FacebookProto::UpdateLoop" );
+	LOG( "<<<<< Exiting FacebookProto::UpdateLoop [%d]", tim );
 }
 
 void FacebookProto::MessageLoop(void *)
 {
-	ScopedLock s(message_loop_lock_); // TODO: Required?
-	LOG( ">>>>> Entering Facebook::MessageLoop" );
+	//ScopedLock s(message_loop_lock_); // TODO: Required?
+  time_t tim = ::time(NULL);
+	LOG( ">>>>> Entering Facebook::MessageLoop[%d]", tim );
 
-	while ( true )
+	while ( facy.channel( ) )
 	{
 		if ( !isOnline( ) )
 			break;
-		if ( !facy.channel( ) )
-			break;
-		LOG( "***** FacebookProto::MessageLoop refreshing..." );
+		LOG( "***** FacebookProto::MessageLoop[%d] refreshing...", tim );
 	}
 
-	LOG( "<<<<< Exiting FacebookProto::MessageLoop" );
+	LOG( "<<<<< Exiting FacebookProto::MessageLoop[%d]", tim );
 }
 
 BYTE FacebookProto::GetPollRate( )

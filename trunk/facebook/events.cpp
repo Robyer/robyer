@@ -27,11 +27,11 @@ Last change on : $Date: 2011-02-05 16:57:18 +0100 (so, 05 2 2011) $
 
 #include "common.h"
 
-int FacebookProto::Test( WPARAM wparam, LPARAM lparam )
+/*int FacebookProto::Test( WPARAM wparam, LPARAM lparam )
 {
 	facy.feeds( );
 	return FALSE;
-}
+}*/
 
 int FacebookProto::Log(const char *fmt,...)
 {
@@ -51,19 +51,23 @@ int FacebookProto::Log(const char *fmt,...)
 
 LRESULT CALLBACK PopupDlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	switch(message) {
-
-	case WM_COMMAND: {
+	switch(message)
+  {
+	case WM_COMMAND:
+  {
 		//Get the plugin data (we need the PopUp service to do it)
 		TCHAR* data = (TCHAR*)PUGetPluginData(hwnd);
-		if (data != NULL) {
+		if (data != NULL)
+    {
 //			char *url = mir_t2a_cp(data,CP_UTF8);
 			std::string url2 = mir_t2a_cp(data,CP_UTF8);
 			std::string url = "http://www.facebook.com";
-			if ( url2.substr(0,4) != "http" ) {
+			if ( url2.substr(0,4) != "http" )
+      {
 				url.append(url2);
 				CallService(MS_UTILS_OPENURL, (WPARAM) 1, (LPARAM) url.c_str() );
-			} else
+			}
+      else
 				CallService(MS_UTILS_OPENURL, (WPARAM) 1, (LPARAM) url2.c_str() );
 		}
 
@@ -75,12 +79,13 @@ LRESULT CALLBACK PopupDlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPa
 		PUDeletePopUp(hwnd);
 		break;
 
-	case UM_FREEPLUGINDATA: {
+	case UM_FREEPLUGINDATA:
+  {
 		// After close, free
 		TCHAR* url = (TCHAR*)PUGetPluginData(hwnd);
 		if (url != NULL)
 			mir_free(url);
-		} return FALSE;
+	} return FALSE;
 
 	default:
 		break; 
@@ -94,55 +99,64 @@ int FacebookProto::NotifyEvent(TCHAR* title, TCHAR* info, HANDLE contact, DWORD 
 {
 	int ret; int timeout; COLORREF colorBack = 0; COLORREF colorText = 0;
 
-	switch ( flags ) {
+	switch ( flags )
+  {
+	  case FACEBOOK_EVENT_CLIENT:
+      if ( !getByte( FACEBOOK_KEY_EVENT_CLIENT_ENABLE, DEFAULT_EVENT_CLIENT_ENABLE ) )
+			  return EXIT_SUCCESS;
+		  if ( !getByte( FACEBOOK_KEY_EVENT_CLIENT_DEFAULT, 0 ) )
+      {
+			  colorBack = getDword( FACEBOOK_KEY_EVENT_CLIENT_COLBACK, DEFAULT_EVENT_COLBACK );
+			  colorText = getDword( FACEBOOK_KEY_EVENT_CLIENT_COLTEXT, DEFAULT_EVENT_COLTEXT );
+      }
+		  timeout = getDword( FACEBOOK_KEY_EVENT_CLIENT_TIMEOUT, 0 );
+		  flags |= NIIF_WARNING;
+		  break;
 
-	case FACEBOOK_EVENT_CLIENT:
-    if ( !getByte( FACEBOOK_KEY_EVENT_CLIENT_ENABLE, DEFAULT_EVENT_CLIENT_ENABLE ) )
-			return EXIT_SUCCESS;
-		if ( !getByte( FACEBOOK_KEY_EVENT_CLIENT_DEFAULT, 0 ) ) {
-			colorBack = getDword( FACEBOOK_KEY_EVENT_CLIENT_COLBACK, DEFAULT_EVENT_COLBACK );
-			colorText = getDword( FACEBOOK_KEY_EVENT_CLIENT_COLTEXT, DEFAULT_EVENT_COLTEXT ); }
-		timeout = getDword( FACEBOOK_KEY_EVENT_CLIENT_TIMEOUT, 0 );
-		flags |= NIIF_WARNING;
-		break;
+	  case FACEBOOK_EVENT_NEWSFEED:
+      if ( !getByte( FACEBOOK_KEY_EVENT_FEEDS_ENABLE, DEFAULT_EVENT_FEEDS_ENABLE ) )
+			  return EXIT_SUCCESS;
+		  if ( !getByte( FACEBOOK_KEY_EVENT_FEEDS_DEFAULT, 0 ) )
+      {
+			  colorBack = getDword( FACEBOOK_KEY_EVENT_FEEDS_COLBACK, DEFAULT_EVENT_COLBACK );
+			  colorText = getDword( FACEBOOK_KEY_EVENT_FEEDS_COLTEXT, DEFAULT_EVENT_COLTEXT );
+      }
+		  timeout = getDword( FACEBOOK_KEY_EVENT_FEEDS_TIMEOUT, 0 );
+		  SkinPlaySound( "NewsFeed" );
+		  flags |= NIIF_INFO;
+		  break;
 
-	case FACEBOOK_EVENT_NEWSFEED:
-    if ( !getByte( FACEBOOK_KEY_EVENT_FEEDS_ENABLE, DEFAULT_EVENT_FEEDS_ENABLE ) )
-			return EXIT_SUCCESS;
-		if ( !getByte( FACEBOOK_KEY_EVENT_FEEDS_DEFAULT, 0 ) ) {
-			colorBack = getDword( FACEBOOK_KEY_EVENT_FEEDS_COLBACK, DEFAULT_EVENT_COLBACK );
-			colorText = getDword( FACEBOOK_KEY_EVENT_FEEDS_COLTEXT, DEFAULT_EVENT_COLTEXT ); }
-		timeout = getDword( FACEBOOK_KEY_EVENT_FEEDS_TIMEOUT, 0 );
-		SkinPlaySound( "NewsFeed" );
-		flags |= NIIF_INFO;
-		break;
+	  case FACEBOOK_EVENT_NOTIFICATION:
+		  if ( !getByte( FACEBOOK_KEY_EVENT_NOTIFICATIONS_ENABLE, DEFAULT_EVENT_NOTIFICATIONS_ENABLE ) )
+			  return EXIT_SUCCESS;
+		  if ( !getByte( FACEBOOK_KEY_EVENT_NOTIFICATIONS_DEFAULT, 0 ) )
+      {
+			  colorBack = getDword( FACEBOOK_KEY_EVENT_NOTIFICATIONS_COLBACK, DEFAULT_EVENT_COLBACK );
+			  colorText = getDword( FACEBOOK_KEY_EVENT_NOTIFICATIONS_COLTEXT, DEFAULT_EVENT_COLTEXT );
+      }
+		  timeout = getDword( FACEBOOK_KEY_EVENT_NOTIFICATIONS_TIMEOUT, 0 );
+		  SkinPlaySound( "Notification" );
+		  flags |= NIIF_INFO;
+		  break;
 
-	case FACEBOOK_EVENT_NOTIFICATION:
-		if ( !getByte( FACEBOOK_KEY_EVENT_NOTIFICATIONS_ENABLE, DEFAULT_EVENT_NOTIFICATIONS_ENABLE ) )
-			return EXIT_SUCCESS;
-		if ( !getByte( FACEBOOK_KEY_EVENT_NOTIFICATIONS_DEFAULT, 0 ) ) {
-			colorBack = getDword( FACEBOOK_KEY_EVENT_NOTIFICATIONS_COLBACK, DEFAULT_EVENT_COLBACK );
-			colorText = getDword( FACEBOOK_KEY_EVENT_NOTIFICATIONS_COLTEXT, DEFAULT_EVENT_COLTEXT ); }
-		timeout = getDword( FACEBOOK_KEY_EVENT_NOTIFICATIONS_TIMEOUT, 0 );
-		SkinPlaySound( "Notification" );
-		flags |= NIIF_INFO;
-		break;
-
-	case FACEBOOK_EVENT_OTHER:
-		if ( !getByte( FACEBOOK_KEY_EVENT_OTHER_ENABLE, DEFAULT_EVENT_OTHER_ENABLE ) )
-			return EXIT_SUCCESS;
-		if ( !getByte( FACEBOOK_KEY_EVENT_OTHER_DEFAULT, 0 ) ) {
-			colorBack = getDword( FACEBOOK_KEY_EVENT_OTHER_COLBACK, DEFAULT_EVENT_COLBACK );
-			colorText = getDword( FACEBOOK_KEY_EVENT_OTHER_COLTEXT, DEFAULT_EVENT_COLTEXT ); }
-		timeout = getDword( FACEBOOK_KEY_EVENT_OTHER_TIMEOUT, 0 );
-		SkinPlaySound( "OtherEvent" );
-		flags |= NIIF_INFO;
-		break;
-
+	  case FACEBOOK_EVENT_OTHER:
+		  if ( !getByte( FACEBOOK_KEY_EVENT_OTHER_ENABLE, DEFAULT_EVENT_OTHER_ENABLE ) )
+			  return EXIT_SUCCESS;
+		  if ( !getByte( FACEBOOK_KEY_EVENT_OTHER_DEFAULT, 0 ) )
+      {
+			  colorBack = getDword( FACEBOOK_KEY_EVENT_OTHER_COLBACK, DEFAULT_EVENT_COLBACK );
+			  colorText = getDword( FACEBOOK_KEY_EVENT_OTHER_COLTEXT, DEFAULT_EVENT_COLTEXT );
+      }
+		  timeout = getDword( FACEBOOK_KEY_EVENT_OTHER_TIMEOUT, 0 );
+		  SkinPlaySound( "OtherEvent" );
+		  flags |= NIIF_INFO;
+		  break;
 	}
 
-	if ( !getByte(FACEBOOK_KEY_SYSTRAY_NOTIFY,DEFAULT_SYSTRAY_NOTIFY) ) {
-		if (ServiceExists(MS_POPUP_ADDPOPUP)) {
+	if ( !getByte(FACEBOOK_KEY_SYSTRAY_NOTIFY,DEFAULT_SYSTRAY_NOTIFY) )
+  {
+		if (ServiceExists(MS_POPUP_ADDPOPUP))
+    {
 			POPUPDATAT pd;
 			pd.colorBack = colorBack;
 			pd.colorText = colorText;
@@ -158,8 +172,11 @@ int FacebookProto::NotifyEvent(TCHAR* title, TCHAR* info, HANDLE contact, DWORD 
 			if (ret == 0)
 				return EXIT_FAILURE;
 		}
-	} else {
-		if (ServiceExists(MS_CLIST_SYSTRAY_NOTIFY)) {
+	}
+  else
+  {
+		if (ServiceExists(MS_CLIST_SYSTRAY_NOTIFY))
+    {
 			MIRANDASYSTRAYNOTIFY err;
 			int niif_flags = flags;
 			REMOVE_FLAG( niif_flags, FACEBOOK_EVENT_CLIENT |

@@ -148,8 +148,10 @@ BEGIN
     EDITTEXT        IDC_TIMEOUT4,243,95,34,14,ES_AUTOHSCROLL
     CONTROL         "",IDC_TIMEOUT_SPIN4,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS,266,95,11,14
     CONTROL         "Use balloon notifications in system tray instead of popups",IDC_SYSTRAY_NOTIFY,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,22,130,265,8
-    PUSHBUTTON      "Preview",IDC_PREVIEW,118,148,68,14
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,22,163,265,8
+    PUSHBUTTON      "Preview",IDC_PREVIEW,118,182,68,14
+    LTEXT           "Request following types of News Feed items",IDC_STATIC,22,128,255,8
+    COMBOBOX        IDC_FEED_TYPE,22,140,121,59,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 END
 
 IDD_INFO DIALOGEX 0, 0, 325, 197
@@ -242,7 +244,7 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,2,0
+ FILEVERSION 0,0,2,4
  PRODUCTVERSION 0,9,14,0
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
@@ -259,12 +261,12 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "FileDescription", "Facebook protocol plugin for Miranda IM"
-            VALUE "FileVersion", "0, 0, 2, 0"
+            VALUE "FileVersion", "0, 0, 2, 4"
             VALUE "InternalName", "Facebook RM"
             VALUE "LegalCopyright", "Copyright © 2009-2011 Michal Zelinka, 2011 Robert Pösel"
             VALUE "OriginalFilename", "facebook.dll"
             VALUE "ProductName", "Facebook Protocol RM"
-            VALUE "ProductVersion", "0, 0, 2, 0"
+            VALUE "ProductVersion", "0, 0, 2, 4"
         END
     END
     BLOCK "VarFileInfo"

@@ -3,7 +3,7 @@
 Facebook plugin for Miranda Instant Messenger
 _____________________________________________
 
-Copyright � 2009-11 Michal Zelinka
+Copyright © 2009-11 Michal Zelinka
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -41,14 +41,16 @@ public:
 	{
 		username_ = password_ = \
 		post_form_id_ = dtsg_ = \
-		chat_channel_host_ = logout_hash_ = "";
+		chat_sequence_num_ = chat_channel_host_ = \
+    logout_hash_ = "";
 
-		chat_sequence_num_ = error_count_ = \
-		last_feeds_update_ = 0;
+		msgid_ = error_count_ = last_feeds_update_ = \
+    last_notification_time_ = last_message_time_ = \
+    last_grpmessage_time_ = last_close_chat_time_ = 0;
 
-		chat_first_touch_ = invisible_ = idle_ = false;
+		chat_first_touch_ = invisible_ = idle_ = is_typing_ = false;
 
-		buddies_lock_ = NULL;
+		buddies_lock_ = send_message_lock_ = NULL;
 	}
 
 	// Parent handle
@@ -66,11 +68,18 @@ public:
 	std::string dtsg_;
 	std::string logout_hash_;
 	std::string chat_channel_host_;
-	unsigned int    chat_sequence_num_;
+	std::string chat_sequence_num_;
+	std::string chat_reconnect_reason_;
 	bool    chat_first_touch_;
 	bool    idle_;
-  bool    invisible_;
+	bool    invisible_;
+  bool    is_typing_;
 	time_t  last_feeds_update_;
+  time_t  last_notification_time_;
+  time_t  last_message_time_;
+  time_t  last_grpmessage_time_;
+  time_t  last_close_chat_time_;
+  int     msgid_;
 
 	//bool api_check( );
 
@@ -91,6 +100,7 @@ public:
 	std::map< std::string, std::string >    headers;
 
 	std::string get_user_agent( );
+  std::string get_newsfeed_type( );
 
 	std::string load_cookies( );
 	void    store_headers( http::response* resp, NETLIBHTTPHEADER* headers, int headers_count );
@@ -127,9 +137,7 @@ public:
 
 	bool    home( );
 	bool    reconnect( );
-  bool    chat_state( bool online = true );
-	bool    keep_alive( );
-  bool    keep_online( );
+	bool    chat_state( bool online = true );
 
 	////////////////////////////////////////////////////////////
 
@@ -137,6 +145,7 @@ public:
 
 	List::List< facebook_user > buddies;
 	HANDLE  buddies_lock_;
+	HANDLE  send_message_lock_;
 
 	bool    buddy_list( );
 	bool    feeds( );
@@ -147,7 +156,7 @@ public:
 
 	bool    channel( );
 	bool    send_message( std::string message_recipient, std::string message_text );
-	bool    close_chat( std::string message_recipient );
+	void    close_chat( std::string message_recipient );
 
 	////////////////////////////////////////////////////////////
 

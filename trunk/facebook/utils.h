@@ -67,20 +67,24 @@ void ForkThread(void (__cdecl T::*thread)(void*),T *self,void *data = 0)
 
 namespace utils
 {
-	namespace url {
+	namespace url
+  {
 		std::string encode(const std::string &s);
 	};
 
-	namespace time {
+	namespace time
+  {
 		std::string unix_timestamp( );
 		std::string mili_timestamp( );
 	};
 
-	namespace number {
+	namespace number
+  {
 		int random( );
 	};
 
-	namespace text {
+	namespace text
+  {
 		void replace_first( std::string* data, std::string from, std::string to );
 		void replace_all( std::string* data, std::string from, std::string to );
 		unsigned int count_all( std::string* data, std::string term );
@@ -92,17 +96,19 @@ namespace utils
 		std::string source_get_value( std::string* data, unsigned int argument_count, ... );
 	};
 
-	namespace conversion {
+	namespace conversion
+  {
 		std::string to_string( void*, WORD type );
 	};
 
-	namespace debug {
+	namespace debug
+  {
 		void info( const char* info, HWND parent = NULL );
-		void test( FacebookProto* fbp );
 		int log(std::string file_name, std::string text);
 	};
 
-	namespace mem {
+	namespace mem
+  {
 		void __fastcall detract(char** str );
 		void __fastcall detract(void** p);
 		void __fastcall detract(void* p);

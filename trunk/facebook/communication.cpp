@@ -45,7 +45,7 @@ http::response facebook_client::flap( const int request_type, std::string* reque
 	if ( request_data != NULL )
 	{
 		nlhr.pData = (char*)(*request_data).c_str();
-		nlhr.dataLength = request_data->length( );
+		nlhr.dataLength = (int)request_data->length( );
 	}
 
 	parent->Log("@@@@@ Sending request to '%s'", nlhr.szUrl);
@@ -76,27 +76,32 @@ http::response facebook_client::flap( const int request_type, std::string* reque
 
 bool facebook_client::validate_response( http::response* resp )
 {
-	if ( resp->code == HTTP_CODE_FAKE_DISCONNECTED ) {
+	if ( resp->code == HTTP_CODE_FAKE_DISCONNECTED )
+  {
 		parent->Log(" ! !  Request has timed out, connection or server error");
-		return false; }
+		return false;
+  }
 
-	if ( resp->data.find( "{\"error\":" ) != std::string::npos ) try
-	{
-		std::string error = resp->data.substr( resp->data.find( "{\"error\":" ) + 9, 128 );
-		int error_num = atoi( error.substr( 0, error.find( "," ) ).c_str() );
-		if ( error_num != 0 )
-		{
-			error = error.substr( error.find( "\"errorDescription\":\"" ) + 40 );
-			error = error.substr( 0, error.find( "\"," ) );
-			resp->error_number = error_num;
-			resp->error_text = error;
-			parent->Log(" ! !  Received Facebook error: %d -- %s", error_num, error.c_str());
-//			client_notify( ... );
-			resp->code = HTTP_CODE_FAKE_ERROR;
-			return false;
-		}
-	} catch (const std::exception &e) {
-		parent->Log(" @ @  validate_response: Exception: %s",e.what());return false; }
+	if ( resp->data.find( "{\"error\":" ) != std::string::npos )
+    try
+  	{
+		  std::string error = resp->data.substr( resp->data.find( "{\"error\":" ) + 9, 128 );
+	    int error_num = atoi( error.substr( 0, error.find( "," ) ).c_str() );
+	    if ( error_num != 0 )
+	    {
+		    error = error.substr( error.find( "\"errorDescription\":\"" ) + 40 );
+		    error = error.substr( 0, error.find( "\"," ) );
+		    resp->error_number = error_num;
+		    resp->error_text = error;
+		    parent->Log(" ! !  Received Facebook error: %d -- %s", error_num, error.c_str());
+    //			client_notify( ... );
+		    resp->code = HTTP_CODE_FAKE_ERROR;
+		    return false;
+	    }
+    } catch (const std::exception &e) {
+	    parent->Log(" @ @  validate_response: Exception: %s",e.what());
+      return false;
+    }
 
 	return true;
 }
@@ -127,8 +132,11 @@ bool facebook_client::handle_error( std::string method, bool force_disconnect )
 	else
 		result = false;
 
-	if ( result == false ) {
-		reset_error(); parent->SetStatus(ID_STATUS_OFFLINE); }
+	if ( result == false )
+	{
+		reset_error();
+		parent->SetStatus(ID_STATUS_OFFLINE);
+	}
 
 	return result;
 }
@@ -232,11 +240,13 @@ std::string facebook_client::choose_server( int request_type, std::string* data 
 	case FACEBOOK_REQUEST_SETUP_MACHINE:
 		return FACEBOOK_SERVER_LOGIN;
 
-	case FACEBOOK_REQUEST_MESSAGES_RECEIVE: {
+	case FACEBOOK_REQUEST_MESSAGES_RECEIVE:
+	{
 		std::string server = FACEBOOK_SERVER_CHAT;
 		utils::text::replace_first( &server, "%s", "0" );
 		utils::text::replace_first( &server, "%s", this->chat_channel_host_ );
-		return server; }
+		return server;
+	}
 
 //	case FACEBOOK_REQUEST_PROFILE_GET:
 //		return FACEBOOK_SERVER_MOBILE;
@@ -282,20 +292,24 @@ std::string facebook_client::choose_action( int request_type, std::string* data 
 	case FACEBOOK_REQUEST_BUDDY_LIST:
 		return "/ajax/chat/buddy_list.php?__a=1";
 
-	case FACEBOOK_REQUEST_FEEDS: {
-		// Filters: lf = live feed, h = news feed
-		// TODO: Make filter selection customizable?
-		std::string action = "/ajax/intent.php?filter=lf&request_type=1&__a=1&newest=%s&ignore_self=true";
+	case FACEBOOK_REQUEST_FEEDS:
+  {
+		std::string action = "/ajax/intent.php?filter=";
+      action += get_newsfeed_type();
+      action += "&request_type=1&__a=1&newest=%s&ignore_self=true";
 		std::string newest = utils::conversion::to_string((void*)&this->last_feeds_update_, UTILS_CONV_TIME_T);
 		utils::text::replace_first( &action, "%s", newest );
-		return action; }
+		return action;
+  }
 
-	case FACEBOOK_REQUEST_RECONNECT: {
-		std::string action = "/ajax/presence/reconnect.php?reason=%s&iframe_loaded=false&post_form_id=%s&__a=1&nctr[n]=1";
-		std::string reason = ( this->chat_first_touch_ ) ? FACEBOOK_RECONNECT_LOGIN : FACEBOOK_RECONNECT_KEEP_ALIVE;
-		utils::text::replace_first( &action, "%s", reason );
+	case FACEBOOK_REQUEST_RECONNECT:
+  {
+		std::string action = "/ajax/presence/reconnect.php?__a=1&reason=%s&iframe_loaded=false&post_form_id=%s";
+		//std::string reason = ( this->chat_first_touch_ ) ? FACEBOOK_RECONNECT_LOGIN : FACEBOOK_RECONNECT_KEEP_ALIVE;
+		utils::text::replace_first( &action, "%s", this->chat_reconnect_reason_ );
 		utils::text::replace_first( &action, "%s", this->post_form_id_ );
-		return action; }
+		return action;
+  }
 
 // Backup for old mobile site profile getter
 //
@@ -304,10 +318,12 @@ std::string facebook_client::choose_action( int request_type, std::string* data 
 //		utils::text::replace_first( &action, "%s", (*data) );
 //		return action; }
 
-	case FACEBOOK_REQUEST_PROFILE_GET: {
+	case FACEBOOK_REQUEST_PROFILE_GET:
+  {
 		std::string action = "/ajax/hovercard/user.php?id=%s&__a=1";
 		utils::text::replace_first( &action, "%s", (*data) );
-		return action; }
+		return action;
+  }
 
 	case FACEBOOK_REQUEST_STATUS_SET:
 		return "/ajax/updatestatus.php?__a=1";
@@ -315,16 +331,28 @@ std::string facebook_client::choose_action( int request_type, std::string* data 
 	case FACEBOOK_REQUEST_MESSAGE_SEND:
 		return "/ajax/chat/send.php?__a=1";
 
-	case FACEBOOK_REQUEST_MESSAGES_RECEIVE: {
-		std::string action = "/x/%s/%s/p_%s=%d";
+	case FACEBOOK_REQUEST_MESSAGES_RECEIVE:
+  {
+		std::string action = "/x/%s/0/%s/p_%s=%s";
 		std::string first_time;
-		if ( this->chat_first_touch_ ) { first_time = "true"; this->chat_first_touch_ = false; }
+
+    // RM TODO: ?
+    //this->chat_first_touch_ = !this->idle_;
+		
+    if ( this->chat_first_touch_ )
+    {
+        first_time = "true";
+        this->chat_first_touch_ = false;
+        this->chat_reconnect_reason_ = FACEBOOK_RECONNECT_LOGIN;
+    }
 		else first_time = "false";
 		utils::text::replace_first( &action, "%s", utils::time::unix_timestamp() );
 		utils::text::replace_first( &action, "%s", first_time );
 		utils::text::replace_first( &action, "%s", self_.user_id );
-		utils::text::replace_first( &action, "%d", utils::conversion::to_string( (void*)&chat_sequence_num_, UTILS_CONV_UNSIGNED_NUMBER ) );
-		return action; }
+    if (this->chat_sequence_num_ == "") this->chat_sequence_num_ = "0";
+		utils::text::replace_first( &action, "%s", chat_sequence_num_ );
+		return action;
+  }
 
 	case FACEBOOK_REQUEST_SETTINGS:
 		return "/ajax/chat/settings.php?__a=1";
@@ -436,8 +464,17 @@ std::string facebook_client::get_user_agent( )
 {
 	BYTE user_agent = DBGetContactSettingByte(NULL, parent->m_szModuleName, FACEBOOK_KEY_USER_AGENT, 0);
 	if (user_agent > 0 && user_agent < SIZEOF(user_agents))
-		return user_agents[user_agent];
-	else return g_strUserAgent;
+    return user_agents[user_agent].id;
+	else
+    return g_strUserAgent;
+}
+
+std::string facebook_client::get_newsfeed_type( )
+{
+	BYTE feed_type = DBGetContactSettingByte(NULL, parent->m_szModuleName, FACEBOOK_KEY_FEED_TYPE, 0);
+	if (feed_type < 0 && feed_type >= SIZEOF(feed_types))
+	  feed_type = 0;	
+  return feed_types[feed_type].id;
 }
 
 std::string facebook_client::load_cookies( )
@@ -447,12 +484,15 @@ std::string facebook_client::load_cookies( )
 	std::string cookieString = "isfbe=false;";
 
 	if ( !cookies.empty( ) )
-		for ( std::map< std::string, std::string >::iterator iter = cookies.begin(); iter != cookies.end(); ++iter ) {
+		for ( std::map< std::string, std::string >::iterator iter = cookies.begin(); iter != cookies.end(); ++iter )
+    {
 			cookieString.append( iter->first );
 			cookieString.append( 1, '=' );
 			cookieString.append( iter->second );
-			cookieString.append( 1, ';' ); }
-	return cookieString;
+			cookieString.append( 1, ';' );
+    }
+	
+  return cookieString;
 }
 
 void facebook_client::store_headers( http::response* resp, NETLIBHTTPHEADER* headers, int headersCount )
@@ -469,15 +509,20 @@ void facebook_client::store_headers( http::response* resp, NETLIBHTTPHEADER* hea
 		{
 			std::string cookie_name = header_value.substr( 0, header_value.find( "=" ) );
 			std::string cookie_value = header_value.substr( header_value.find( "=" ) + 1, header_value.find( ";" ) - header_value.find( "=" ) - 1 );
-			if ( cookie_value == "deleted" ) {
-				parent->Log("      Deleted cookie '%s'", cookie_name.c_str());
-				cookies.erase( cookie_name ); }
-			else {
-				parent->Log("      New cookie '%s': %s", cookie_name.c_str(), cookie_value.c_str());
-				cookies[cookie_name] = cookie_value; }
+			if ( cookie_value == "deleted" )
+      {
+		    //parent->Log("      Deleted cookie '%s'", cookie_name.c_str());
+				cookies.erase( cookie_name );
+      }
+			else
+      {
+				//parent->Log("      New cookie '%s': %s", cookie_name.c_str(), cookie_value.c_str());
+				cookies[cookie_name] = cookie_value;
+      }
 		}
-		else {
-			parent->Log("----- Got header '%s': %s", header_name.c_str(), header_value.c_str() );
+		else
+    { // RM TODO: (un)comment			
+			//parent->Log("----- Got header '%s': %s", header_name.c_str(), header_value.c_str() );
 			resp->headers[header_name] = header_value;
 		}
 	}
@@ -541,11 +586,21 @@ bool facebook_client::login(const std::string &username,const std::string &passw
 	// Process result data
 	validate_response(&resp);
 
+  // Check if facebook requires https, but we have disabled it
+  if ( !DBGetContactSettingByte( NULL, parent->m_szProtoName, FACEBOOK_KEY_FORCE_HTTPS, 0 ) )
+  {    
+    if ( resp.headers.find("Location") != resp.headers.end() && resp.headers["Location"].find("https://") != std::string::npos )
+    {
+      client_notify(TranslateT("Your account requires https connection. Activating..."));
+      DBWriteContactSettingByte( NULL, parent->m_szProtoName, FACEBOOK_KEY_FORCE_HTTPS, 1 );
+    }
+  }
+
 	// Check whether setting Machine name is required
 	if ( resp.code == HTTP_CODE_FOUND && resp.headers.find("Location") != resp.headers.end() && resp.headers["Location"].find("loginnotify/setup_machine.php") != std::string::npos ) {
 		std::string inner_data = "charset_test=%e2%82%ac%2c%c2%b4%2c%e2%82%ac%2c%c2%b4%2c%e6%b0%b4%2c%d0%94%2c%d0%84&locale=en&machinename=MirandaIM&remembercomputer=1";
-	//	inner_data += g_strUserAgent; // RM TODO max. 40 znakù
-		flap( FACEBOOK_REQUEST_SETUP_MACHINE, &inner_data ); }
+		flap( FACEBOOK_REQUEST_SETUP_MACHINE, &inner_data );
+  }
 
 	// Check for Device ID
 	if ( cookies["datr"].length() )
@@ -554,11 +609,16 @@ bool facebook_client::login(const std::string &username,const std::string &passw
 	switch ( resp.code )
 	{
 
-	case HTTP_CODE_OK: { // OK page returned, but that is regular login page we don't want in fact
+	case HTTP_CODE_OK: // OK page returned, but that is regular login page we don't want in fact
+  { 
 		// Get error message
-		std::string error_str = utils::text::source_get_value( &resp.data, 2, "id=\"standard_error\">", "</h2>" );
+		std::string error_str = utils::text::trim(
+        utils::text::special_expressions_decode(
+            utils::text::remove_html( 
+              utils::text::edit_html(
+                utils::text::source_get_value( &resp.data, 2, "id=\"standard_error\">", "</h2>" ) ) ) ) );
 		if ( !error_str.length() )
-			error_str = "Unknown login error";
+			error_str = Translate("Unknown login error");
 		parent->Log(" ! !  Login error: %s", error_str.c_str());
 
 		TCHAR* message = TranslateT( "Login error: " );
@@ -578,14 +638,17 @@ bool facebook_client::login(const std::string &username,const std::string &passw
 		return handle_error( "login", FORCE_DISCONNECT );
 
 	case HTTP_CODE_FOUND: // Found and redirected to Home, Logged in, everything is OK
-		if ( cookies.find("c_user") != cookies.end() ) {
+		if ( cookies.find("c_user") != cookies.end() )
+    {
 			this->self_.user_id = cookies.find("c_user")->second;
 			DBWriteContactSettingString(NULL,parent->m_szModuleName,FACEBOOK_KEY_ID,this->self_.user_id.c_str());
 			parent->Log("      Got self user id: %s", this->self_.user_id.c_str());
-			return handle_success( "login" ); }
-		else {
-			client_notify(TranslateT("Login error, probably bad login credentials."));
-			return handle_error( "login", FORCE_DISCONNECT );
+			return handle_success( "login" );
+    }
+		else
+    {
+      client_notify(TranslateT("Login error, probably bad login credentials."));
+		  return handle_error( "login", FORCE_DISCONNECT );
 		}
 	}
 }
@@ -615,80 +678,12 @@ bool facebook_client::logout( )
 
 	switch ( resp.code )
 	{
-
-	case HTTP_CODE_OK:
-	case HTTP_CODE_FOUND:
-		return handle_success( "logout" );
-
-	default:
-		return false; // Logout not finished properly, but..okay, who cares :P
-
-	}
-}
-
-bool facebook_client::keep_online( )
-{
-	if ( parent->isOffline() )
-		return false;
-
-  return home();
-
-  /*chat_state( true );
-  reconnect();
-
-  handle_entry( "keep_online" );  
-
-  http::response resp = flap( FACEBOOK_REQUEST_HOME , NULL );
-
-	// Process result
-	validate_response(&resp);
-
-	switch ( resp.code )
-	{
-
-	case HTTP_CODE_OK:
-	case HTTP_CODE_FOUND:
-		return handle_success( "keep_online" );
+  case HTTP_CODE_OK:
+  case HTTP_CODE_FOUND:
+	  return handle_success( "logout" );
 
 	default:
-		return handle_error( "keep_online" );
-
-	}*/
-}
-
-bool facebook_client::keep_alive( )
-{
-  if ( parent->isOffline() )
-		return false;
-
-	handle_entry( "keep_alive" );
-
-	std::string data = "user=" + this->self_.user_id + "&popped_out=false&force_render=true&buddy_list=1&notifications=0&post_form_id=" + this->post_form_id_ + "&fb_dtsg=" + this->dtsg_ + "&post_form_id_source=AsyncRequest&__a=1&nctr[n]=1";
-
-	{
-		ScopedLock s(buddies_lock_);
-
-		for (List::Item< facebook_user >* i = buddies.begin(); i != buddies.end(); i = i->next ) {
-			data += "&available_list[";
-			data += i->data->user_id;
-			data += "][i]=";
-			data += ( i->data->is_idle ) ? "1" : "0"; } }
-
-	http::response resp = flap( FACEBOOK_REQUEST_KEEP_ALIVE, &data );
-
-	// Process result
-	validate_response(&resp);
-
-	switch ( resp.code )
-	{
-
-	case HTTP_CODE_OK:
-	case HTTP_CODE_FOUND:
-		return handle_success( "keep_alive" );
-
-	default:
-		return handle_error( "keep_alive" );
-
+    return false; // Logout not finished properly, but..okay, who cares :P
 	}
 }
 
@@ -703,7 +698,6 @@ bool facebook_client::home( )
 
 	switch ( resp.code )
 	{
-
 	case HTTP_CODE_OK:
 		if ( resp.data.find( "id=\"navAccountName\"" ) != std::string::npos )
 		{
@@ -730,9 +724,11 @@ bool facebook_client::home( )
 			parent->Log("      Got self logout hash: %s", this->logout_hash_.c_str());
 
 			// Get friend requests count and messages count and notify it
-			if ( DBGetContactSettingByte( NULL, parent->m_szModuleName, FACEBOOK_KEY_EVENT_OTHER_ENABLE, DEFAULT_EVENT_OTHER_ENABLE ) ) {
+			if ( DBGetContactSettingByte( NULL, parent->m_szModuleName, FACEBOOK_KEY_EVENT_OTHER_ENABLE, DEFAULT_EVENT_OTHER_ENABLE ) )
+      {
 				std::string str_count = utils::text::source_get_value( &resp.data, 2, "<span id=\"jewelRequestCount\">", "</span>" );
-				if ( str_count.length() && str_count != std::string( "0" ) ) {
+				if ( str_count.length() && str_count != std::string( "0" ) )
+        {
 					TCHAR* message = TranslateT( "Got new friend requests: " );
 					TCHAR* count = mir_a2t_cp( str_count.c_str( ), CP_UTF8 );
 					TCHAR* info = ( TCHAR* )malloc( ( lstrlen( message ) + lstrlen( count ) ) * sizeof( TCHAR ) );
@@ -741,10 +737,12 @@ bool facebook_client::home( )
 					parent->NotifyEvent( parent->m_tszUserName, info, NULL, FACEBOOK_EVENT_OTHER, TEXT(FACEBOOK_URL_REQUESTS) );
 					mir_free( message );
 					mir_free( count );
-					mir_free( info ); }
+					mir_free( info );
+        }
 
 				str_count = utils::text::source_get_value( &resp.data, 2, "<span id=\"jewelInnerUnseenCount\">", "</span>" );
-				if ( str_count.length() && str_count != std::string( "0" ) ) {
+				if ( str_count.length() && str_count != std::string( "0" ) )
+        {
 					TCHAR* message = TranslateT( "Got new messages: " );
 					TCHAR* count = mir_a2t_cp( str_count.c_str( ), CP_UTF8 );
 					TCHAR* info = ( TCHAR* )malloc( ( lstrlen( message ) + lstrlen( count ) ) * sizeof( TCHAR ) );
@@ -753,8 +751,53 @@ bool facebook_client::home( )
 					parent->NotifyEvent( parent->m_tszUserName, info, NULL, FACEBOOK_EVENT_OTHER, TEXT(FACEBOOK_URL_MESSAGES) );
 					mir_free( message );
 					mir_free( count );
-					mir_free( info ); }
+					mir_free( info );
+        }
+
+        str_count = utils::text::source_get_value( &resp.data, 4, "id=\"notificationsWrapper", "<span class=\"jewelCount\">", "<span>", "</span>" );
+				if ( str_count.length() && str_count != std::string( "0" ) )
+        {
+          TCHAR* message = TranslateT( "Got new notifications: " );
+					TCHAR* count = mir_a2t_cp( str_count.c_str( ), CP_UTF8 );
+					TCHAR* info = ( TCHAR* )malloc( ( lstrlen( message ) + lstrlen( count ) ) * sizeof( TCHAR ) );
+					lstrcpy( info, message );
+					lstrcat( info, count );
+					parent->NotifyEvent( parent->m_tszUserName, info, NULL, FACEBOOK_EVENT_OTHER, TEXT(FACEBOOK_URL_NOTIFICATIONS) );
+					mir_free( message );
+					mir_free( count );
+					mir_free( info );
+        }
 			}
+
+      // RM TODO: if enabled groupchats support
+      // Get group chats
+/*      std::string chat_ids = utils::text::source_get_value( &resp.data, 2, "HomeNavController.initGroupCounts([","]" );
+			if ( chat_ids.length() )
+      {
+        // RM TODO:
+        // split by comma to ids, find names in source, inicialize groups in contactlist
+        // maybe check which groupchats user wants
+        // add to list? start worker for parse and add contacts to groupchat
+
+        // add "," to end for better parsing
+        chat_ids += ",";
+        std::string::size_type oldpos = 0, pos = 0;
+        
+        while ( ( pos = chat_ids.find(",", oldpos) ) != std::string::npos )
+	      {
+          std::string id = chat_ids.substr(oldpos, pos-oldpos);
+          std::string name = utils::text::trim(
+            utils::text::special_expressions_decode(
+              utils::text::remove_html( 
+                utils::text::edit_html(
+                  utils::text::source_get_value( &resp.data, 5, "HomeNavController.initGroupCounts", "home.php?sk=group_", id.c_str(), "input title=\\\"", "\\\" " ) ) ) ) );
+
+          parent->Log("      Got groupchat id: %s, name: %s", id.c_str(), name.c_str());
+		      oldpos = pos+1;
+
+          parent->AddChat(id.c_str(), name.c_str());
+	      }        
+      }*/
 
 			// Set first touch flag
 			this->chat_first_touch_ = true;
@@ -764,16 +807,16 @@ bool facebook_client::home( )
 
 			return handle_success( "home" );
 		}
-		else {
-			client_notify(TranslateT("Something happened to Facebook. Maybe there was some major update so you should wait for an update."));
+		else
+    {
+      client_notify(TranslateT("Something happened to Facebook. Maybe there was some major update so you should wait for an update."));
 			return handle_error( "home", FORCE_DISCONNECT );
 		}
 
 	case HTTP_CODE_FOUND:
-		parent->Log("      REPLICA_DOWN is back in force! What a regression, muhahaha! Revert to revision 88 to take care about this...");
+    parent->Log("      REPLICA_DOWN is back in force! What a regression, muhahaha! Revert to revision 88 to take care about this...");
 	default:
 		return handle_error( "home", FORCE_DISCONNECT );
-
 	}
 }
 
@@ -806,19 +849,18 @@ bool facebook_client::reconnect( )
 
 	switch ( resp.code )
 	{
+	  case HTTP_CODE_OK:
+    {
+		  this->chat_channel_host_ = utils::text::source_get_value( &resp.data, 2, "\"host\":\"", "\"" );
+		  parent->Log("      Got self channel host: %s", this->chat_channel_host_.c_str());
 
-	case HTTP_CODE_OK: {
-		this->chat_channel_host_ = utils::text::source_get_value( &resp.data, 2, "\"host\":\"", "\"" );
-		parent->Log("      Got self channel host: %s", this->chat_channel_host_.c_str());
-
-		this->chat_sequence_num_ = atoi( utils::text::source_get_value( &resp.data, 2, "\"seq\":", "," ).c_str() );
-		parent->Log("      Got self sequence number: %d", this->chat_sequence_num_); }
-
-		return handle_success( "reconnect" );
-
-	default:
-		return handle_error( "reconnect", FORCE_DISCONNECT );
-
+		  this->chat_sequence_num_ = utils::text::source_get_value( &resp.data, 2, "\"seq\":", "," );
+		  parent->Log("      Got self sequence number: %s", this->chat_sequence_num_.c_str());
+  		
+      return handle_success( "reconnect" );
+    }
+	  default:
+		  return handle_error( "reconnect", FORCE_DISCONNECT );
 	}
 }
 
@@ -829,14 +871,17 @@ bool facebook_client::buddy_list( )
 	// Prepare update data
 	std::string data = "user=" + this->self_.user_id + "&popped_out=false&force_render=true&buddy_list=1&notifications=0&post_form_id=" + this->post_form_id_ + "&fb_dtsg=" + this->dtsg_ + "&post_form_id_source=AsyncRequest&__a=1&nctr[n]=1";
 
-	{
+  {
 		ScopedLock s(buddies_lock_);
 
-		for (List::Item< facebook_user >* i = buddies.begin(); i != NULL; i = i->next ) {
+		for (List::Item< facebook_user >* i = buddies.begin(); i != NULL; i = i->next )
+    {
 			data += "&available_list[";
 			data += i->data->user_id;
 			data += "][i]=";
-			data += ( i->data->is_idle ) ? "1" : "0"; } }
+			data += ( i->data->is_idle ) ? "1" : "0";
+    }
+  }
 
 	// Get buddy list
 	http::response resp = flap( FACEBOOK_REQUEST_BUDDY_LIST, &data );
@@ -846,18 +891,18 @@ bool facebook_client::buddy_list( )
 
 	switch ( resp.code )
 	{
+	  case HTTP_CODE_OK:
+		  if ( resp.data.find( "\"listChanged\":true" ) != std::string::npos )
+      {
+			  std::string* response_data = new std::string( resp.data );
+			  ForkThread( &FacebookProto::ProcessBuddyList, this->parent, ( void* )response_data );
+      }
+		  return handle_success( "buddy_list" );
 
-	case HTTP_CODE_OK:
-		if ( resp.data.find( "\"listChanged\":true" ) != std::string::npos ) {
-			std::string* response_data = new std::string( resp.data );
-			ForkThread( &FacebookProto::ProcessBuddyList, this->parent, ( void* )response_data ); }
-		return handle_success( "buddy_list" );
-
-	case HTTP_CODE_FAKE_ERROR:
-	case HTTP_CODE_FAKE_DISCONNECTED:
-	default:
-		return handle_error( "buddy_list" );
-
+	  case HTTP_CODE_FAKE_ERROR:
+	  case HTTP_CODE_FAKE_DISCONNECTED:
+	  default:
+		  return handle_error( "buddy_list" );
 	}
 }
 
@@ -870,29 +915,26 @@ bool facebook_client::feeds( )
 
 	// Process result data
 	validate_response(&resp);
-
-  int pos;
-
+  
+  std::string::size_type pos = 0;
 	switch ( resp.code )
 	{
-
-	case HTTP_CODE_OK:
-		pos = resp.data.find( "\"storyCount\":" );
-    if ( pos != std::string::npos )
-    {
-			if (resp.data.substr( pos + 13, 1 ) != "0")
+	  case HTTP_CODE_OK:
+		  pos = resp.data.find( "\"storyCount\":" );
+      if ( pos != std::string::npos )
       {
-        std::string* response_data = new std::string( resp.data );
-			  ForkThread( &FacebookProto::ProcessFeeds, this->parent, ( void* )response_data );
+			  if (resp.data.substr( pos + 13, 1 ) != "0")
+        {
+          std::string* response_data = new std::string( resp.data );
+			    ForkThread( &FacebookProto::ProcessFeeds, this->parent, ( void* )response_data );
+        }
       }
-    }
-		return handle_success( "feeds" );
+		  return handle_success( "feeds" );
 
-	case HTTP_CODE_FAKE_ERROR:
-	case HTTP_CODE_FAKE_DISCONNECTED:
-	default:
-		return handle_error( "feeds" );
-
+	  case HTTP_CODE_FAKE_ERROR:
+	  case HTTP_CODE_FAKE_DISCONNECTED:
+	  default:
+		  return handle_error( "feeds" );
 	}
 }
 
@@ -914,14 +956,32 @@ bool facebook_client::channel( )
 	{
 		// Everything is OK, no new message received
 	}
-	else if ( resp.data.find( "\"t\":\"refresh\"" ) != std::string::npos )
-	{
-		// Something went wrong with the session (has expired?), refresh it
-		return this->reconnect( );
-	}
 	else if ( resp.data.find( "\"t\":\"fullReload\"" ) != std::string::npos )
 	{
 		// Something went wrong (server flooding?)
+
+    parent->Log("___need fullreload___");
+    
+    this->chat_sequence_num_ = utils::text::source_get_value( &resp.data, 2, "\"seq\":", "," );
+		parent->Log("      Got self sequence number: %s", this->chat_sequence_num_.c_str());
+
+    this->chat_reconnect_reason_ = utils::text::source_get_value( &resp.data, 2, "\"reason\":", "}" );
+		parent->Log("      Reconnect reason: %s", this->chat_reconnect_reason_.c_str());
+
+    client_notify(TranslateT("Required channel refresh, maybe we didn't received all messages.\nYou should check Facebook website to be sure."));
+    // RM TODO: reconnect isnt needed
+		// return this->reconnect( );
+	}
+  else if ( resp.data.find( "\"t\":\"refresh\"" ) != std::string::npos )
+	{
+		// Something went wrong (server flooding?)
+
+    parent->Log("___need refresh___");
+    
+    this->chat_reconnect_reason_ = utils::text::source_get_value( &resp.data, 2, "\"reason\":", "}" );
+		parent->Log("      Reconnect reason: %s", this->chat_reconnect_reason_.c_str());
+
+    client_notify(TranslateT("Required channel refresh, maybe we didn't received all messages.\nYou should check Facebook website to be sure."));
 		return this->reconnect( );
 	}
 	else
@@ -931,21 +991,21 @@ bool facebook_client::channel( )
 		ForkThread( &FacebookProto::ProcessMessages, this->parent, ( void* )response_data );
 
 		// Increment sequence number
-		this->chat_sequence_num_ += utils::text::count_all( &resp.data, "\"type\":\"" );
+    this->chat_sequence_num_ = utils::text::source_get_value( &resp.data, 2, "\"s\":", "," );
+		parent->Log("      Got self sequence number: %s", this->chat_sequence_num_.c_str());
 	}
 
 	// Return
 	switch ( resp.code )
 	{
-
-	case HTTP_CODE_OK:
-		return handle_success( "channel" );
-
-	case HTTP_CODE_FAKE_ERROR:
-	case HTTP_CODE_FAKE_DISCONNECTED:
-	default:
-		return handle_error( "channel" );
-
+	  case HTTP_CODE_OK:
+		  return handle_success( "channel" );
+    case HTTP_CODE_FAKE_DISCONNECTED:
+      if ( !parent->isOnline() )
+		    return handle_success( "channel" );
+	  case HTTP_CODE_FAKE_ERROR:
+	  default:
+		  return handle_error( "channel" );
 	}
 }
 
@@ -961,7 +1021,11 @@ bool facebook_client::send_message( std::string message_recipient, std::string m
 	data += message_recipient;
 	data += "&client_time=";
 	data += utils::time::mili_timestamp( );
-	data += "&to_offline=false";
+  data += "&pvs_time=";
+	data += utils::time::mili_timestamp( );
+  data += "&fb_dtsg=";
+  data += ( this->dtsg_.length( ) ) ? this->dtsg_ : "0";
+  data += "&to_offline=false&lsd=&post_form_id_source=AsyncRequest&num_tabs=1";
 	data += "&post_form_id=";
 	data += ( post_form_id_.length( ) ) ? post_form_id_ : "0";
 
@@ -969,18 +1033,21 @@ bool facebook_client::send_message( std::string message_recipient, std::string m
 
 	validate_response(&resp);
 
-	switch ( resp.error_number ) {
+	switch ( resp.error_number )
+  {
+  	case 0: // Everything is OK
+      break;
 
-	case 0: // Everything is OK
-          break;
+    case 1356003:
+    { // Contact is offline
+		  HANDLE hContact = parent->ContactIDToHContact( message_recipient );
+  		DBWriteContactSettingWord(hContact,parent->m_szModuleName,"Status",ID_STATUS_OFFLINE);
+      return false;
+	  } break;
 
-	case 1356003: { // Contact is offline
-		HANDLE hContact = parent->ContactIDToHContact( message_recipient );
-		DBWriteContactSettingWord(hContact,parent->m_szModuleName,"Status",ID_STATUS_OFFLINE);
-		} break;  
-
-	case 1356026: // Contact has alternative client
-          /*
+  	case 1356026: // Contact has alternative client
+      client_notify(TranslateT("Need confirmation for sending messages to other clients.\nOpen facebook website and try to send message to this contact again!"));
+      /*
           post na url http://www.facebook.com/ajax/chat/post_application_settings.php?__a=1
 
           enable_and_send      Povolit a odeslat                                                                                                                                                                                                                                                                                                                                                                                                                               
@@ -991,39 +1058,45 @@ bool facebook_client::send_message( std::string message_recipient, std::string m
           lsd                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
           post_form_id_source  AsyncRequest                                                                                                                                                                                                                                                                                                                                                                                                                                    
           */
-          break;
-
-	default:
-		break;
-	}
+      return false;
+      break;
+  
+    default:
+      return false;
+		  break;
+ 	}
 
 	switch ( resp.code )
 	{
+	  case HTTP_CODE_OK:
+		  return handle_success( "send_message" );
 
-	case HTTP_CODE_OK:
-		return handle_success( "send_message" );
-
-	case HTTP_CODE_FAKE_ERROR:
-	case HTTP_CODE_FAKE_DISCONNECTED:
-	default:
-		return handle_error( "send_message" );
-
+	  case HTTP_CODE_FAKE_ERROR:
+	  case HTTP_CODE_FAKE_DISCONNECTED:
+	  default:
+		  return handle_error( "send_message" );
 	}
 }
 
-bool facebook_client::close_chat( std::string message_recipient )
+void facebook_client::close_chat( std::string message_recipient )
 {
-	std::string data = "close_chat=";
+  // RM TODO: better optimalization for close_chat
+  // add items to list and then checking every x seconds
+  if ( (::time(NULL) - parent->facy.last_close_chat_time_) < 8 )
+    return;
+
+  parent->facy.last_close_chat_time_ = ::time(NULL);
+
+  std::string data = "close_chat=";
 	data += message_recipient;
 	data += "&window_id=0";
 	data += "&post_form_id=";
 	data += ( post_form_id_.length( ) ) ? post_form_id_ : "0";
 	data += "&post_form_id_source=AsyncRequest";
-	data += "&fb_dtsg=" + this->dtsg_;
+	data += "&fb_dtsg=";
+  data += ( this->dtsg_.length( ) ) ? this->dtsg_ : "0";
 	
 	http::response resp = flap( FACEBOOK_REQUEST_SETTINGS, &data );
-
-	return true;
 }
 
 bool facebook_client::get_profile(facebook_user* fbu)
@@ -1036,25 +1109,25 @@ bool facebook_client::get_profile(facebook_user* fbu)
 
 	switch ( resp.code )
 	{
+	  case HTTP_CODE_OK:
+    {
+		  // TODO: More items?
+		  fbu->status = "";			
 
-	case HTTP_CODE_OK: {
-		// TODO: More items?
-		fbu->status = "";			
+		  std::string image = utils::text::source_get_value( &resp.data, 2, "background-image: url(", ")" );
+		  if ( image.length() )
+			  fbu->image_url = utils::text::special_expressions_decode( image );
+		  else
+			  fbu->image_url = FACEBOOK_DEFAULT_AVATAR_URL;
+	  }
 
-		std::string image = utils::text::source_get_value( &resp.data, 2, "background-image: url(", ")" );
-		if ( image.length() )
-			fbu->image_url = utils::text::special_expressions_decode( image );
-		else
-			fbu->image_url = FACEBOOK_DEFAULT_AVATAR_URL;
-	}
-	case HTTP_CODE_FOUND:
-		return handle_success( "get_profile" );
+    case HTTP_CODE_FOUND:
+		  return handle_success( "get_profile" );
 
-	case HTTP_CODE_FAKE_ERROR:
-	case HTTP_CODE_FAKE_DISCONNECTED:
-	default:
-		return handle_error( "get_profile" );
-
+	  case HTTP_CODE_FAKE_ERROR:
+	  case HTTP_CODE_FAKE_DISCONNECTED:
+	  default:
+  		return handle_error( "get_profile" );
 	}
 }
 
@@ -1069,11 +1142,13 @@ bool facebook_client::set_status(const std::string &status_text)
 	data += "&target_id=";
 	data += this->self_.user_id;
 
-	if ( status_text.length( ) ) {
+	if ( status_text.length( ) )
+  {
 		data += "&action=PROFILE_UPDATE&app_id=&hey_kid_im_a_composer=true&display_context=profile&_log_display_context=profile&ajax_log=1&status=";
 		data += utils::url::encode( status_text );
 		data += "&profile_id=";
-		data += this->self_.user_id; }
+		data += this->self_.user_id;
+  }
 	else
 		data += "&clear=1&nctr[_mod]=pagelet_top_bar";
 
@@ -1083,15 +1158,13 @@ bool facebook_client::set_status(const std::string &status_text)
 
 	switch ( resp.code )
 	{
+	  case HTTP_CODE_OK:
+  		return handle_success( "set_status" );
 
-	case HTTP_CODE_OK:
-		return handle_success( "set_status" );
-
-	case HTTP_CODE_FAKE_ERROR:
-	case HTTP_CODE_FAKE_DISCONNECTED:
-	default:
-		return handle_error( "set_status" );
-
+  	case HTTP_CODE_FAKE_ERROR:
+	  case HTTP_CODE_FAKE_DISCONNECTED:
+	  default:
+  		return handle_error( "set_status" );
 	}
 }
 

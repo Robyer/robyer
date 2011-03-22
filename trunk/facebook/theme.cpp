@@ -27,6 +27,8 @@ Last change on : $Date: 2011-01-08 11:10:34 +0100 (so, 08 1 2011) $
 
 #include "common.h"
 
+extern OBJLIST<FacebookProto> g_Instances;
+
 struct
 {
 	const char*  name;
@@ -38,7 +40,8 @@ static const icons[] =
 {
 	{ "facebook", LPGEN("Facebook Icon"), IDI_FACEBOOK },
 	{ "mind",     LPGEN("Mind"),          IDI_MIND     },
-//	{ "homepage", LPGEN("Visit Homepage"), 0, "core_main_2" }, // Uncomment when this menu item is available
+
+  { "homepage", LPGEN("Visit Profile"), 0, "core_main_2" }, 
 };
 
 static HANDLE hIconLibItem[SIZEOF(icons)];
@@ -61,7 +64,7 @@ void InitIcons(void)
     sid.flags = SIDF_PATH_TCHAR;
 
 	for (int i=0; i<SIZEOF(icons); i++) 
-    {
+  {
 		if(icons[i].defIconID)
 		{
 			mir_snprintf(setting_name,sizeof(setting_name),"%s_%s","Facebook",icons[i].name);
@@ -70,9 +73,7 @@ void InitIcons(void)
 			{
 				mir_snprintf(section_name,sizeof(section_name),"%s/%s/%s",LPGEN("Protocols"),
 					LPGEN("Facebook"), icons[i].section);
-			}
-			else
-			{
+			} else {
 				mir_snprintf(section_name,sizeof(section_name),"%s/%s",LPGEN("Protocols"),
 					LPGEN("Facebook"));
 			}
@@ -80,9 +81,9 @@ void InitIcons(void)
 			sid.pszDescription = (char*)icons[i].descr;
 			sid.iDefaultIndex = -icons[i].defIconID;
 			hIconLibItem[i] = (HANDLE)CallService(MS_SKIN2_ADDICON,0,(LPARAM)&sid);
-		}
-		else // External icons
-		{
+    }
+    else
+    { // External icons
 			hIconLibItem[i] = (HANDLE)CallService(MS_SKIN2_GETICONHANDLE,0,
 				(LPARAM)icons[i].section);
 		}
@@ -100,78 +101,70 @@ HANDLE GetIconHandle(const char* name)
 }
 
 // Contact List menu stuff
-//HANDLE g_hMenuItems[2];
+HANDLE g_hMenuItems[2];
 
-//// Helper functions
-//static FacebookProto * GetInstanceByHContact(HANDLE hContact)
-//{
-//	char *proto = reinterpret_cast<char*>( CallService(MS_PROTO_GETCONTACTBASEPROTO,
-//		reinterpret_cast<WPARAM>(hContact),0) );
-//	if(!proto)
-//		return 0;
-//
-//	for(int i=0; i<g_Instances.getCount(); i++)
-//		if(!strcmp(proto,g_Instances[i].m_szModuleName))
-//			return &g_Instances[i];
-//
-//	return 0;
-//}
-//
-//template<int (__cdecl FacebookProto::*Fcn)(WPARAM,LPARAM)>
-//int GlobalService(WPARAM wParam,LPARAM lParam)
-//{
-//	FacebookProto *proto = GetInstanceByHContact(reinterpret_cast<HANDLE>(wParam));
-//	return proto ? (proto->*Fcn)(wParam,lParam) : 0;
-//}
-//
-//static int PrebuildContactMenu(WPARAM wParam,LPARAM lParam)
-//{
-//	ShowContactMenus(false);
-//
-//	FacebookProto *proto = GetInstanceByHContact(reinterpret_cast<HANDLE>(wParam));
-//	return proto ? proto->OnPrebuildContactMenu(wParam,lParam) : 0;
-//}
-//
-//void InitContactMenus()
-//{
-//	HookEvent(ME_CLIST_PREBUILDCONTACTMENU,PrebuildContactMenu);
-//
-//	CLISTMENUITEM mi = {sizeof(mi)};
-//	mi.flags = CMIF_NOTOFFLINE | CMIF_ICONFROMICOLIB;
-//
-//	mi.position=-2000006000;
-//	mi.icolibItem = GetIconHandle("reply");
-//	mi.pszName = LPGEN("Reply...");
-//	mi.pszService = "FacebookProto/ReplyToMind";
-//	CreateServiceFunction(mi.pszService,GlobalService<&FacebookProto::ReplyToMind>);
-//	g_hMenuItems[0] = reinterpret_cast<HANDLE>(
-//		CallService(MS_CLIST_ADDCONTACTMENUITEM,0,(LPARAM)&mi) );
-//
-//	mi.position=-2000006000;
-//	mi.icolibItem = GetIconHandle("homepage");
-//	mi.pszName = LPGEN("Visit Homepage");
-//	mi.pszService = "FacebookProto/VisitHomepage";
-//	CreateServiceFunction(mi.pszService,GlobalService<&FacebookProto::VisitHomepage>);
-//	g_hMenuItems[1] = reinterpret_cast<HANDLE>(
-//		CallService(MS_CLIST_ADDCONTACTMENUITEM,0,(LPARAM)&mi) );
-//}
-//
-//void UninitContactMenus()
-//{
-//	for(size_t i=0; i<SIZEOF(g_hMenuItems); i++)
-//		CallService(MS_CLIST_REMOVECONTACTMENUITEM,(WPARAM)g_hMenuItems[i],0);
-//}
-//
-//void ShowContactMenus(bool show)
-//{
-//	for(size_t i=0; i<SIZEOF(g_hMenuItems); i++)
-//	{
-//		CLISTMENUITEM item = { sizeof(item) };
-//		item.flags = CMIM_FLAGS | CMIF_NOTOFFLINE;
-//		if(!show)
-//			item.flags |= CMIF_HIDDEN;
-//
-//		CallService(MS_CLIST_MODIFYMENUITEM,reinterpret_cast<WPARAM>(g_hMenuItems[i]),
-//			reinterpret_cast<LPARAM>(&item));
-//	}
-//}
+// Helper functions
+static FacebookProto * GetInstanceByHContact(HANDLE hContact)
+{
+	char *proto = reinterpret_cast<char*>( CallService(MS_PROTO_GETCONTACTBASEPROTO,
+		reinterpret_cast<WPARAM>(hContact),0) );
+	if(!proto)
+		return 0;
+
+	for(int i=0; i<g_Instances.getCount(); i++)
+		if(!strcmp(proto,g_Instances[i].m_szModuleName))
+			return &g_Instances[i];
+
+	return 0;
+}
+
+template<int (__cdecl FacebookProto::*Fcn)(WPARAM,LPARAM)>
+INT_PTR GlobalService(WPARAM wParam,LPARAM lParam)
+{
+	FacebookProto *proto = GetInstanceByHContact(reinterpret_cast<HANDLE>(wParam));
+	return proto ? (proto->*Fcn)(wParam,lParam) : 0;
+}
+
+static int PrebuildContactMenu(WPARAM wParam,LPARAM lParam)
+{
+	ShowContactMenus(false);
+
+	FacebookProto *proto = GetInstanceByHContact(reinterpret_cast<HANDLE>(wParam));
+	return proto ? proto->OnPrebuildContactMenu(wParam,lParam) : 0;
+}
+
+void InitContactMenus()
+{
+	HookEvent(ME_CLIST_PREBUILDCONTACTMENU,PrebuildContactMenu);
+
+	CLISTMENUITEM mi = {sizeof(mi)};
+	mi.flags = CMIF_ICONFROMICOLIB;
+
+	mi.position=-2000006000;
+	mi.icolibItem = GetIconHandle("homepage");
+	mi.pszName = LPGEN("Visit Profile");
+	mi.pszService = "FacebookProto/VisitProfile";
+  CreateServiceFunction(mi.pszService,GlobalService<&FacebookProto::VisitProfile>);
+	g_hMenuItems[1] = reinterpret_cast<HANDLE>(
+		CallService(MS_CLIST_ADDCONTACTMENUITEM,0,(LPARAM)&mi) );
+}
+
+void UninitContactMenus()
+{
+	for(size_t i=0; i<SIZEOF(g_hMenuItems); i++)
+		CallService(MS_CLIST_REMOVECONTACTMENUITEM,(WPARAM)g_hMenuItems[i],0);
+}
+
+void ShowContactMenus(bool show)
+{
+	for(size_t i=0; i<SIZEOF(g_hMenuItems); i++)
+	{
+		CLISTMENUITEM item = { sizeof(item) };
+		item.flags = CMIM_FLAGS;
+		if(!show)
+			item.flags |= CMIF_HIDDEN;
+
+		CallService(MS_CLIST_MODIFYMENUITEM,reinterpret_cast<WPARAM>(g_hMenuItems[i]),
+			reinterpret_cast<LPARAM>(&item));
+	}
+}

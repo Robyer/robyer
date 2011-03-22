@@ -27,13 +27,18 @@ Last change on : $Date: 2011-01-08 11:10:34 +0100 (so, 08 1 2011) $
 
 #include "common.h"
 
-bool FacebookProto::IsMyContact(HANDLE hContact)
+bool FacebookProto::IsMyContact(HANDLE hContact, bool include_chat)
 {
 	const char *proto = reinterpret_cast<char*>( CallService(MS_PROTO_GETCONTACTBASEPROTO,
 		reinterpret_cast<WPARAM>(hContact),0) );
 
-	if(proto && strcmp(m_szModuleName,proto) == 0)
-		return true;
+	if( proto && strcmp(m_szModuleName,proto) == 0 )
+  {
+		if( include_chat )
+			return true;
+		else
+			return DBGetContactSettingByte(hContact,m_szModuleName,"ChatRoom",0) == 0;
+  }
 	else
 		return false;
 }
@@ -50,9 +55,11 @@ HANDLE FacebookProto::ContactIDToHContact(std::string user_id)
 		DBVARIANT dbv;
 		if( !DBGetContactSettingString(hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv) )
 		{
-			if(strcmp(user_id.c_str(),dbv.pszVal) == 0) {
+			if( strcmp(user_id.c_str(),dbv.pszVal) == 0 )
+      {
 				DBFreeVariant(&dbv);
-				return hContact; }
+				return hContact;
+      }
 			else
 				DBFreeVariant(&dbv);
 		}
@@ -65,16 +72,21 @@ HANDLE FacebookProto::AddToContactList(facebook_user* fbu)
 {
 	// First, check if this contact exists
 	HANDLE hContact = ContactIDToHContact(fbu->user_id);
-	if(hContact)
+	if( hContact )
 		return hContact;
 
 	// If not, make a new contact!
 	hContact = (HANDLE)CallService(MS_DB_CONTACT_ADD, 0, 0);
-	if(hContact)
+	if( hContact )
 	{
-		if(CallService(MS_PROTO_ADDTOCONTACT,(WPARAM)hContact,(LPARAM)m_szModuleName) == 0)
+		if( CallService(MS_PROTO_ADDTOCONTACT,(WPARAM)hContact,(LPARAM)m_szModuleName) == 0 )
 		{
 			DBWriteContactSettingString(hContact,m_szModuleName,FACEBOOK_KEY_ID,fbu->user_id.c_str());
+      
+      std::string homepage = FACEBOOK_URL_PROFILE;
+      homepage += fbu->user_id;
+      DBWriteContactSettingString(hContact,m_szModuleName,"Homepage",homepage.c_str());
+
 			DBDeleteContactSetting(hContact, "CList", "MyHandle");
 			DBVARIANT dbv;
 			if( !DBGetContactSettingTString(NULL,m_szModuleName,FACEBOOK_KEY_DEF_GROUP,&dbv) )
@@ -119,7 +131,8 @@ void FacebookProto::SetAllContactStatuses(int status)
 
 void FacebookProto::UpdateContactWorker(void *p)
 {
-	if ( p == NULL ) return;
+	if ( p == NULL )
+    return;
 
 	facebook_user* fbu = ( facebook_user* )p;
 
@@ -134,87 +147,73 @@ void FacebookProto::UpdateContactWorker(void *p)
 	}
 	else // ID_STATUS_ONLINE + _CONNECTING for self-contact
 	{
-		if ( fbu->user_id != facy.self_.user_id ) // if not real contact
-		{
+		bool update_required = false;
+
+    if ( fbu->user_id != facy.self_.user_id ) // if not self-contact
+		{ 
 			if (!fbu->handle) // just been added
 				fbu->handle = AddToContactList(fbu);
 
-			/*if (!fbu->last_update) // just come online
-        DBWriteContactSettingWord(fbu->handle,m_szModuleName,"Status", fbu->is_idle ? ID_STATUS_AWAY : ID_STATUS_ONLINE );
-*/
+			if (!fbu->last_update) // just come online
+        update_required = true;
+      else // is in database non-actual status?
+        update_required = DBGetContactSettingWord(fbu->handle,m_szModuleName,"Status", 0) != (fbu->is_idle ? ID_STATUS_AWAY : ID_STATUS_ONLINE);
 
-			// Update idle flag
-			if ( fbu->is_idle )
+      if (update_required)
       {
-				if ( !DBGetContactSettingDword(fbu->handle,m_szModuleName,"IdleTS",0) )
-					DBWriteContactSettingDword(fbu->handle,m_szModuleName,"IdleTS",(DWORD)time(NULL));
-        if ( DBGetContactSettingDword(fbu->handle,m_szModuleName,"Status", 0) != ID_STATUS_AWAY )
-          DBWriteContactSettingDword(fbu->handle,m_szModuleName,"Status", ID_STATUS_AWAY);
-      }
-			else
-      {
-				if ( DBGetContactSettingDword(fbu->handle,m_szModuleName,"IdleTS",0) )
-					DBWriteContactSettingDword(fbu->handle,m_szModuleName,"IdleTS",0);
-        if ( DBGetContactSettingDword(fbu->handle,m_szModuleName,"Status", 0) != ID_STATUS_ONLINE )
-					DBWriteContactSettingDword(fbu->handle,m_szModuleName,"Status", ID_STATUS_ONLINE);
+        DBWriteContactSettingWord(fbu->handle,m_szModuleName,"Status", fbu->is_idle ? ID_STATUS_AWAY : ID_STATUS_ONLINE );
+        DBWriteContactSettingDword(fbu->handle,m_szModuleName,"IdleTS", fbu->is_idle ? (DWORD)time(NULL) : 0);
       }
 		}
 
 		if ( fbu->user_id == facy.self_.user_id || ContactNeedsUpdate( fbu ) )
 		{
-			bool update_required = false;
 			DBVARIANT dbv;
+			
+      // Update Real name
+			if ( !DBGetContactSettingUTF8String(fbu->handle,m_szModuleName,FACEBOOK_KEY_NAME,&dbv) ) {
+        update_required = strcmp( dbv.pszVal, fbu->real_name.c_str() ) != 0;
+				DBFreeVariant(&dbv);
+      } else {
+        update_required = true;
+      }
 
-			// Update Real name
-
-			if ( !DBGetContactSettingString(fbu->handle,m_szModuleName,FACEBOOK_KEY_ID,&dbv) ) {
-				update_required = strcmp( dbv.pszVal, fbu->real_name.c_str() ) != 0;
-				DBFreeVariant(&dbv); }
-			else update_required = true;
-
-			if ( update_required ) {
+      if ( update_required )
+      {
 				DBWriteContactSettingUTF8String(fbu->handle,m_szModuleName,FACEBOOK_KEY_NAME,fbu->real_name.c_str());
-				DBWriteContactSettingUTF8String(fbu->handle,m_szModuleName,"Nick",fbu->real_name.c_str()); }
+				DBWriteContactSettingUTF8String(fbu->handle,m_szModuleName,"Nick",fbu->real_name.c_str());
+        update_required = false;
+      }
 
-			// Get Status message and Avatar URL if needed
-
-			facy.get_profile( fbu );
-
-/*			// Update status message
-
-			if ( fbu->user_id == facy.self_.user_id )
-				update_required = true;
-			else if ( !DBGetContactSettingUTF8String(fbu->handle,"CList","StatusMsg",&dbv) ) {
-				update_required = strcmp( dbv.pszVal, fbu->status.c_str() ) != 0;
-				DBFreeVariant(&dbv); }
-			else update_required = true;
-
-			if ( update_required ) {
-				if ( fbu->user_id == facy.self_.user_id )
-					setU8String("StatusMsg",fbu->status.c_str());
-				else
-					DBWriteContactSettingUTF8String(fbu->handle,"CList","StatusMsg",fbu->status.c_str());
-			}
-*/
 			// Update avatar
+      if ( fbu->user_id == facy.self_.user_id )
+      {
+        facy.get_profile( fbu );
+        fbu->thumb_url = fbu->image_url;
+      }
 
-			if ( !DBGetContactSettingString(fbu->handle,m_szModuleName,FACEBOOK_KEY_AV_URL,&dbv) ) {
-				update_required = strcmp( dbv.pszVal, fbu->image_url.c_str() ) != 0;
-				DBFreeVariant(&dbv); }
-			else update_required = true;
+      if ( !DBGetContactSettingString(fbu->handle,m_szModuleName,FACEBOOK_KEY_AV_THUMB_URL,&dbv) ) {
+				update_required = strcmp( dbv.pszVal, fbu->thumb_url.c_str() ) != 0;
+			  DBFreeVariant(&dbv);
+      } else {
+        update_required = true;
+      }
 
 			update_required = update_required || !AvatarExists(fbu->user_id);
 
 			if ( update_required ) {
-				DBWriteContactSettingString(fbu->handle,m_szModuleName,FACEBOOK_KEY_AV_URL,fbu->image_url.c_str());
+        if ( fbu->user_id != facy.self_.user_id )
+          facy.get_profile( fbu );
+
+				DBWriteContactSettingString(fbu->handle,m_szModuleName,FACEBOOK_KEY_AV_THUMB_URL,fbu->thumb_url.c_str());
+        DBWriteContactSettingString(fbu->handle,m_szModuleName,FACEBOOK_KEY_AV_URL,fbu->image_url.c_str());
 				ProcessAvatar(fbu->handle,&fbu->image_url);
-        // RM TODO: poslat mirandì ack o novem avataru
-        // if ( fbu->user_id == facy.self_.user_id )
-        //    sendmirandaack
+
+        if ( fbu->user_id == facy.self_.user_id )
+          CallService(MS_AV_REPORTMYAVATARCHANGED, (WPARAM)this->m_szModuleName, 0);
       }
 
 			// Update update timestamp
-
 			fbu->last_update = ::time( NULL );
 		}
 	}
@@ -226,7 +225,8 @@ exit:
 
 void FacebookProto::GetAwayMsgWorker(void *hContact)
 {
-	if(hContact == 0) return;
+	if(hContact == 0)
+    return;
 
 	DBVARIANT dbv;
 	if( !DBGetContactSettingString(hContact,"CList","StatusMsg",&dbv) )
@@ -244,13 +244,10 @@ void FacebookProto::GetAwayMsgWorker(void *hContact)
 
 HANDLE FacebookProto::GetAwayMsg(HANDLE hContact)
 {
-	ForkThread(&FacebookProto::GetAwayMsgWorker, this,hContact);
-	return (HANDLE)1;
-}
+  return 0; // Status messages is disabled
 
-int FacebookProto::OnBuildContactMenu(WPARAM,LPARAM)
-{
-	return NULL;
+  //ForkThread(&FacebookProto::GetAwayMsgWorker, this,hContact);
+	//return (HANDLE)1;
 }
 
 int FacebookProto::OnContactDeleted(WPARAM wparam,LPARAM)
@@ -260,8 +257,13 @@ int FacebookProto::OnContactDeleted(WPARAM wparam,LPARAM)
 	ScopedLock s(facy.buddies_lock_);
 
 	for (List::Item< facebook_user >* i = facy.buddies.begin( ); i != NULL; i = i->next )
-		if (hContact == i->data->handle) {
-			facy.buddies.erase(i->key); break; }
+  {
+		if (hContact == i->data->handle)
+    {
+			facy.buddies.erase(i->key);
+      break;
+    }
+  }
 
 	return NULL;
 }

@@ -39,13 +39,14 @@ struct facebook_user
 	bool is_idle;
 
 	std::string image_url;
+  std::string thumb_url;
 
 	time_t last_update;
 
 	facebook_user( )
 	{
 		this->handle = NULL;
-		this->user_id = this->real_name = this->status = this->image_url = "";
+		this->user_id = this->real_name = this->thumb_url = this->status = this->image_url = "";
 		this->is_idle = false;
 		this->status_id = ID_STATUS_OFFLINE;
 		this->last_update = 0;
@@ -55,6 +56,7 @@ struct facebook_user
 	{
 		this->handle = fu->handle;
 		this->image_url = fu->image_url;
+    this->thumb_url = fu->thumb_url;
 		this->is_idle = fu->is_idle;
 		this->last_update = fu->last_update;
 		this->real_name = fu->real_name;

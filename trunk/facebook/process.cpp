@@ -29,18 +29,19 @@ Last change on : $Date: 2011-01-20 21:38:59 +0100 (čt, 20 1 2011) $
 
 void FacebookProto::ProcessBuddyList( void* data )
 {
-	if ( data == NULL ) return;
+	if ( data == NULL )
+    return;
 
-	std::string* resp = (std::string*)data;
+  ScopedLock s( facy.buddies_lock_ );
 
-	if ( isOffline( ) )
+  std::string* resp = (std::string*)data;
+
+	if ( isOffline() )
 		goto exit;
 
+  LOG("***** Starting processing buddy list");
+
 	CODE_BLOCK_TRY
-
-	LOG("***** Starting processing buddy list");
-
-	ScopedLock s(facy.buddies_lock_);
 
 	facebook_json_parser* p = new facebook_json_parser( this );
 	p->parse_buddy_list( data, &facy.buddies );
@@ -52,14 +53,18 @@ void FacebookProto::ProcessBuddyList( void* data )
 
 		facebook_user* fu;
 
-		if ( i->data->status_id == ID_STATUS_OFFLINE ) {
-			fu = new facebook_user(i->data);
+		if ( i->data->status_id == ID_STATUS_OFFLINE )
+    {
+			fu = new facebook_user( i->data );
 			std::string to_delete( i->key );
 			i = i->next;
-			facy.buddies.erase( to_delete ); }
-		else {
+			facy.buddies.erase( to_delete );
+    }
+    else
+    {
 			fu = i->data;
-			i = i->next; }
+			i = i->next;
+    }
 
 		ForkThread(&FacebookProto::UpdateContactWorker, this, (void*)fu);
 	}
@@ -82,12 +87,12 @@ void FacebookProto::ProcessMessages( void* data )
 
 	std::string* resp = (std::string*)data;
 
-	if (!isOnline())
+	if ( isOffline() )
 		goto exit;
 
-	CODE_BLOCK_TRY
+  LOG("***** Starting processing messages");
 
-	LOG("***** Starting processing messages");
+	CODE_BLOCK_TRY
 
 	std::vector< facebook_message* > messages;
 	std::vector< facebook_notification* > notifications;
@@ -98,7 +103,8 @@ void FacebookProto::ProcessMessages( void* data )
 
 	for(std::vector<facebook_message*>::size_type i=0; i<messages.size( ); i++)
 	{
-		if ( messages[i]->user_id != facy.self_.user_id ) {
+		if ( messages[i]->user_id != facy.self_.user_id )
+    {
 			LOG("      Got message: %s", messages[i]->message_text.c_str());
 			facebook_user fbu;
 			fbu.user_id = messages[i]->user_id;
@@ -123,10 +129,12 @@ void FacebookProto::ProcessMessages( void* data )
 	}
 	messages.clear();
 
+  // RM TODO: needed if notify?
 	BYTE notify = getByte( FACEBOOK_KEY_EVENT_NOTIFICATIONS_ENABLE, DEFAULT_EVENT_NOTIFICATIONS_ENABLE );
 	for(std::vector<facebook_notification*>::size_type i=0; i<notifications.size( ); i++)
 	{
-		if ( notify ) {
+		if ( notify )
+    {
 			LOG("      Got notification: %s", notifications[i]->text.c_str());
 			TCHAR* szTitle = mir_a2t_cp(this->m_szModuleName, CP_UTF8);
 			TCHAR* szText = mir_a2t_cp(notifications[i]->text.c_str(), CP_UTF8);
@@ -154,7 +162,8 @@ exit:
 
 void FacebookProto::ProcessFeeds( void* data )
 {
-	if ( data == NULL ) return;
+	if ( data == NULL )
+    return;
 
 	std::string* resp = (std::string*)data;
 
@@ -174,15 +183,23 @@ void FacebookProto::ProcessFeeds( void* data )
 
 	while ( ( pos = resp->find( "<h6", pos ) ) != std::string::npos && limit <= 25 )
 	{
-    pos += 4;
-		std::string post_content = resp->substr( pos, resp->find( "<\\/h6", pos ) + 6 - pos );
+		std::string::size_type pos2 = resp->find( "<form", pos );
+    if (pos2 == std::string::npos)
+      pos2 = resp->find( "<\\/h6" );
+
+    std::string post_content = resp->substr( pos, pos2 - pos );
 		std::string rest_content = resp->substr( resp->find( "class=\\\"uiStreamSource\\\"", pos ) , resp->find( "<abbr title=", pos ) - pos );
 
+    pos += 4;
 		facebook_newsfeed* nf = new facebook_newsfeed;
 
 		nf->title = utils::text::source_get_value( &post_content, 3, "<a ", "\\\">", "<\\/a" );
 		nf->user_id = utils::text::source_get_value( &post_content, 2, "user.php?id=", "\\\"" );
-		nf->text = utils::text::source_get_value( &post_content, 2, "<span class=\\\"messageBody\\\">", "<\\/h6" );
+		
+    pos2 = post_content.find( "<\\/a>" );
+    nf->text = post_content.substr( pos2, post_content.length() - pos2 );
+    //nf->text = utils::text::source_get_value( &post_content, 2, "<\\/a>",/*<span class=\\\"messageBody\\\">", *//*"<\\/h6"*/ "<form" );
+
 		nf->link = utils::text::source_get_value( &rest_content, 2, "href=\\\"", "\\\">" );
 
 		nf->title = utils::text::trim(
@@ -194,11 +211,17 @@ void FacebookProto::ProcessFeeds( void* data )
               utils::text::edit_html( nf->text ) ) ) ) ;
 		nf->link = utils::text::special_expressions_decode( nf->link );
 
-		if ( !nf->title.length() || !nf->text.length() ) {
+		if ( !nf->title.length() || !nf->text.length() )
+    {
 			delete nf;
-			continue; }
+			continue;
+    }
 
-		if (nf->text.length() > 420) nf->text = nf->text.substr(0, 420);
+		if (nf->text.length() > 500)
+    {
+      nf->text = nf->text.substr(0, 500);
+      nf->text += "...";
+    }
 
 		news.push_back( nf );
 		pos++;
@@ -220,7 +243,7 @@ void FacebookProto::ProcessFeeds( void* data )
 	news.clear();
 
 	this->facy.last_feeds_update_ = ::time( NULL );
-	setDword( "LastNotificationsUpdate", this->facy.last_feeds_update_ );
+	setDword( "LastNotificationsUpdate", this->facy.last_feeds_update_ ); // RM TODO: is this useful?
 
 	LOG("***** Feeds processed");
 
