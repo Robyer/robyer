@@ -59,22 +59,19 @@ std::string utils::conversion::to_string( void* data, WORD type )
 	switch ( type )
 	{
   	case UTILS_CONV_BOOLEAN:
-		  if (*( bool* )data)
-        return "true";
-		  else
-        return "false";
+		out << (*( bool* )data) ? "true" : "false";
 
     case UTILS_CONV_TIME_T:
-		  out << (*( time_t* )data);
-		  break;
+		out << (*( time_t* )data);
+		break;
 
-	  case UTILS_CONV_SIGNED_NUMBER:
+	case UTILS_CONV_SIGNED_NUMBER:
   		out << (*( signed int* )data);
-		  break;
+		break;
 
-	  case UTILS_CONV_UNSIGNED_NUMBER:
-  		out << (*( unsigned int* )data);
-		  break;
+	case UTILS_CONV_UNSIGNED_NUMBER:
+		out << (*( unsigned int* )data);
+		break;
 	}
 
 	return out.str( );
@@ -85,7 +82,7 @@ void utils::text::replace_first( std::string* data, std::string from, std::strin
 	std::string::size_type position = 0;
 
 	if ( ( position = data->find(from, position) ) != std::string::npos )
-  {
+	{
 		data->replace( position, from.size(), to );
 		position++;
 	}
@@ -121,7 +118,7 @@ std::string utils::text::special_expressions_decode( std::string data )
 	utils::text::replace_all( &data, "&amp;", "&" );
 	utils::text::replace_all( &data, "&quot;", "\"" );
 	utils::text::replace_all( &data, "&#039;", "'" );
-  utils::text::replace_all( &data, "&#64;", "@" );
+	utils::text::replace_all( &data, "&#64;", "@" );
 	utils::text::replace_all( &data, "&lt;", "<" );
 	utils::text::replace_all( &data, "&gt;", ">" );
 
@@ -140,75 +137,73 @@ std::string utils::text::special_expressions_decode( std::string data )
 	// http://www.natural-innovations.com/wa/doc-charset.html
 	// http://webdesign.about.com/library/bl_htmlcodes.htm
 	
-  return data;
+	return data;
 }
 
 std::string utils::text::edit_html( std::string data )
 {
-  std::string::size_type end = 0;
-  std::string::size_type start = 0;
-  std::string new_string = "";
+	std::string::size_type end = 0;
+	std::string::size_type start = 0;
+	std::string new_string = "";
   
-  while ( end != std::string::npos )
-  {
-    end = data.find( "<span class=\\\"text_exposed_hide", start );
-    if ( end != std::string::npos )
-    {
-      new_string += data.substr( start, end - start );
-      start = data.find( "<\\/span", end );
-    } else {
-      new_string += data.substr( start, data.length() - start );
-    }
-  }
+	while ( end != std::string::npos )
+	{
+		end = data.find( "<span class=\\\"text_exposed_hide", start );
+		if ( end != std::string::npos )
+		{
+			new_string += data.substr( start, end - start );
+			start = data.find( "<\\/span", end );
+		} else {
+			new_string += data.substr( start, data.length() - start );
+		}
+	}
 
-  start = 0;
-  end = 0;
-  data = new_string;
-  new_string = "";
+	start = 0;
+	end = 0;
+	data = new_string;
+	new_string = "";
 
-  while ( end != std::string::npos )
-  {
-    end = data.find( "<span class=\\\"uiTooltipText", start );
-    if ( end != std::string::npos )
-    {
-      new_string += data.substr( start, end - start );
-      start = data.find( "<\\/span", end );
-    }
-    else
-    {
-      new_string += data.substr( start, data.length() - start );
-    }
-  }
+	while ( end != std::string::npos )
+	{
+		end = data.find( "<span class=\\\"uiTooltipText", start );
+		if ( end != std::string::npos )
+		{
+			new_string += data.substr( start, end - start );
+			start = data.find( "<\\/span", end );
+		} else {
+			new_string += data.substr( start, data.length() - start );
+		}
+	}
 
-  start = new_string.find( "class=\\\"uiAttachmentTitle", 0 );
-  if ( start != std::string::npos )
-  {
-    data = new_string.substr( 0, start );
-    data = utils::text::trim( data );
+	start = new_string.find( "class=\\\"uiAttachmentTitle", 0 );
+	if ( start != std::string::npos )
+	{
+		data = new_string.substr( 0, start );
+		data = utils::text::trim( data );
 
-    start = new_string.find( ">", start );
-    if ( start != std::string::npos )
-      new_string.insert(start+1, "\n\n");
+		start = new_string.find( ">", start );
+		if ( start != std::string::npos )
+			new_string.insert(start+1, "\n\n");
 
-    start = new_string.find( "<\\/div>", start );
-    if ( start != std::string::npos )
-      new_string.insert(start, "\n");
-  }
+		start = new_string.find( "<\\/div>", start );
+		if ( start != std::string::npos )
+			new_string.insert(start, "\n");
+	}
 
-  start = new_string.find( "uiAttachmentDesc\\\"", 0 );
-  if ( start != std::string::npos )
-  {
-    start = new_string.find( ">", start );
-    if ( start != std::string::npos )
-      new_string.insert(start+1, "\n");
+	start = new_string.find( "uiAttachmentDesc\\\"", 0 );
+	if ( start != std::string::npos )
+	{
+		start = new_string.find( ">", start );
+		if ( start != std::string::npos )
+			new_string.insert(start+1, "\n");
 
-    start = new_string.find( "<\\/div>", start );
-    if ( start != std::string::npos )
-      new_string.insert(start, "\n");
-  }
+		start = new_string.find( "<\\/div>", start );
+		if ( start != std::string::npos )
+			new_string.insert(start, "\n");
+	}
   
-  utils::text::replace_all( &new_string, "<br \\/>", "\n" );
-  utils::text::replace_all( &new_string, "\n\n\n", "\n\n" );
+	utils::text::replace_all( &new_string, "<br \\/>", "\n" );
+	utils::text::replace_all( &new_string, "\n\n\n", "\n\n" );
 	return new_string;
 }
 
@@ -225,7 +220,7 @@ std::string utils::text::remove_html( std::string data )
 			continue;
 		}
 
-    new_string += data.at(i);
+		new_string += data.at(i);
 	}
 
 	return new_string;
@@ -237,7 +232,7 @@ std::string utils::text::slashu_to_utf8( std::string data )
 
 	for ( std::string::size_type i = 0; i < data.length( ); i++ )
 	{
-		if ( data.at(i) == '\\' && data.at(i+1) == 'u' )
+		if ( data.at(i) == '\\' && (i+1) < data.length( ) && data.at(i+1) == 'u' )
 		{
 			unsigned int udn = strtol( data.substr( i + 2, 4 ).c_str(), NULL, 16 );
 
@@ -253,9 +248,9 @@ std::string utils::text::slashu_to_utf8( std::string data )
 				new_string += ( char )( 128 + ( udn % 64  ) );
 			}
 			else if ( udn <= 127 )
-      { // U+0000 .. U+007F (should not appear)
+			{ // U+0000 .. U+007F (should not appear)
 				new_string += ( char )udn;
-      }
+			}
 
 			i += 5;
 			continue;
@@ -285,9 +280,9 @@ std::string utils::text::source_get_value( std::string* data, unsigned int argum
 	va_start( arg, argument_count );
 	
 	for ( unsigned int i = argument_count; i > 0; i-- )
-  {
+	{
 		if ( i == 1 )
-    {
+		{
 			end = data->find( va_arg( arg, char* ), start );
 			if ( start == std::string::npos || end == std::string::npos )
 				break;
@@ -330,7 +325,7 @@ int utils::debug::log(std::string file_name, std::string text)
 	GetLocalTime( &time );
 
 	std::ofstream out( path.c_str(), std::ios_base::out | std::ios_base::app | std::ios_base::ate );
-  out << "[" << (time.wHour < 10 ? "0" : "") << time.wHour << ":" << (time.wMinute < 10 ? "0" : "") << time.wMinute << ":" << (time.wSecond < 10 ? "0" : "") << time.wSecond << "] " << text << std::endl;
+	out << "[" << (time.wHour < 10 ? "0" : "") << time.wHour << ":" << (time.wMinute < 10 ? "0" : "") << time.wMinute << ":" << (time.wSecond < 10 ? "0" : "") << time.wSecond << "] " << text << std::endl;
 	out.close( );
 
 	return EXIT_SUCCESS;

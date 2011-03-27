@@ -27,21 +27,24 @@ Last change on : $Date: 2011-01-08 11:10:34 +0100 (so, 08 1 2011) $
 
 #include "common.h"
 
-void FacebookProto::KillThreads( )
+void FacebookProto::KillThreads( bool log )
 {
 	// Kill the old threads if they are still around
 	if(m_hMsgLoop != NULL)
 	{
-		LOG("***** Requesting MessageLoop to exit... %d", m_hMsgLoop );
+		if ( log )
+			LOG("***** Requesting MessageLoop to exit... %d", m_hMsgLoop );
 		WaitForSingleObject(m_hMsgLoop,IGNORE);
-    TerminateThread(m_hMsgLoop, 0);
+		TerminateThread(m_hMsgLoop, 0);
 		ReleaseMutex(m_hMsgLoop);
 	}
+	
 	if(m_hUpdLoop != NULL)
 	{
-		LOG("***** Requesting UpdateLoop to exit");
+		if ( log )
+			LOG("***** Requesting UpdateLoop to exit");
 		WaitForSingleObject(m_hUpdLoop,IGNORE);
-    TerminateThread(m_hUpdLoop, 0);
+		TerminateThread(m_hUpdLoop, 0);
 		ReleaseMutex(m_hUpdLoop);
 	}
 }
@@ -55,14 +58,14 @@ void FacebookProto::SignOn(void*)
 
 	if ( NegotiateConnection( ) )
 	{
-    if (!getByte(FACEBOOK_KEY_SHOW_OLD_FEEDS, DEFAULT_SHOW_OLD_FEEDS))
+		if (!getByte(FACEBOOK_KEY_SHOW_OLD_FEEDS, DEFAULT_SHOW_OLD_FEEDS))
 			facy.last_feeds_update_ = ::time( NULL );
 
 		setDword( "LogonTS", (DWORD)time(NULL) );
 		m_hUpdLoop = ForkThreadEx( &FacebookProto::UpdateLoop,  this );
-    m_hMsgLoop = ForkThreadEx( &FacebookProto::MessageLoop, this );
+		m_hMsgLoop = ForkThreadEx( &FacebookProto::MessageLoop, this );
 
-    LOG("***** Started messageloop thread handle %d", m_hMsgLoop);
+		LOG("***** Started messageloop thread handle %d", m_hMsgLoop);
 	}
 	ToggleStatusMenuItems(isOnline());
 
@@ -75,14 +78,14 @@ void FacebookProto::ChangeStatus(void*)
 	ScopedLock s(signon_lock_);
 	LOG("***** Beginning ChangeStatus process");
 
-  int old_status = m_iStatus;	
+	int old_status = m_iStatus;	
 
-  facy.home( );
-  facy.chat_state( true );
-  facy.reconnect( );
-  facy.buddy_list( );
+	facy.home( );
+	facy.chat_state( true );
+	facy.reconnect( );
+	facy.buddy_list( );
 
-  m_iStatus = facy.self_.status_id = m_iDesiredStatus;
+	m_iStatus = facy.self_.status_id = m_iDesiredStatus;
 	ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS,
 	(HANDLE)old_status,m_iStatus);
 
@@ -124,31 +127,28 @@ bool FacebookProto::NegotiateConnection( )
 	std::string user, pass;
 	DBVARIANT dbv = {0};
 
-	if( !DBGetContactSettingString(NULL,m_szModuleName,FACEBOOK_KEY_LOGIN,&dbv) )
+	if ( !DBGetContactSettingString(NULL,m_szModuleName,FACEBOOK_KEY_LOGIN,&dbv) )
 	{
 		user = dbv.pszVal;
 		DBFreeVariant(&dbv);
-	}
-	else
-	{
+	} else {
 		NotifyEvent(m_tszUserName,TranslateT("Please enter a username."),NULL,FACEBOOK_EVENT_CLIENT);
 		goto error;
 	}
-  if( !DBGetContactSettingString(NULL,m_szModuleName,FACEBOOK_KEY_DEVICE_ID,&dbv) )
+
+	if ( !DBGetContactSettingString(NULL,m_szModuleName,FACEBOOK_KEY_DEVICE_ID,&dbv) )
 	{
 		facy.cookies["datr"] = dbv.pszVal;
 		DBFreeVariant(&dbv);
 	}
 
-	if( !DBGetContactSettingString(NULL,m_szModuleName,FACEBOOK_KEY_PASS,&dbv) )
+	if ( !DBGetContactSettingString(NULL,m_szModuleName,FACEBOOK_KEY_PASS,&dbv) )
 	{
 		CallService(MS_DB_CRYPT_DECODESTRING,strlen(dbv.pszVal)+1,
 			reinterpret_cast<LPARAM>(dbv.pszVal));
 		pass = dbv.pszVal;
 		DBFreeVariant(&dbv);
-	}
-	else
-	{
+	} else {
 		NotifyEvent(m_tszUserName,TranslateT("Please enter a password."),NULL,FACEBOOK_EVENT_CLIENT);
 		goto error;
 	}
@@ -157,14 +157,14 @@ bool FacebookProto::NegotiateConnection( )
 	{
 		success = facy.login( user, pass );
 		if (success) success = facy.home( );
-    if (success) success = facy.chat_state( this->m_iDesiredStatus != ID_STATUS_INVISIBLE );
-    if (success) success = facy.reconnect( );
-    if (success) success = facy.buddy_list( );
+		if (success) success = facy.chat_state( this->m_iDesiredStatus != ID_STATUS_INVISIBLE );
+		if (success) success = facy.reconnect( );
+		if (success) success = facy.buddy_list( );
 	}
 
-	if(!success)
+	if (!success)
 	{
-error:
+	error:
 		ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_FAILED,
 			(HANDLE)old_status,m_iStatus);
 
@@ -177,9 +177,7 @@ error:
 			(HANDLE)old_status,m_iStatus);
 
 		return false;
-	}
-	else
-	{
+	} else {
 		m_iStatus = facy.self_.status_id = m_iDesiredStatus;
 
 		ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS,
@@ -192,7 +190,7 @@ error:
 void FacebookProto::UpdateLoop(void *)
 {
 	//ScopedLock s(update_loop_lock_); // TODO: Required?
-  time_t tim = ::time(NULL);
+	time_t tim = ::time(NULL);
 	LOG( ">>>>> Entering Facebook::UpdateLoop [%d]", tim );
 
 	for ( DWORD i = 0; ; i = ++i % 48 )
@@ -200,9 +198,9 @@ void FacebookProto::UpdateLoop(void *)
 		if ( !isOnline( ) )
 			break;
 		if ( i != 0 )
-      if ( !facy.invisible_ )
-        if ( !facy.buddy_list( ) )
-    		  break;
+			if ( !facy.invisible_ )
+				if ( !facy.buddy_list( ) )
+    				break;
 		if ( !isOnline( ) )
 			break;
 		if ( i % 6 == 3 && getByte( FACEBOOK_KEY_EVENT_FEEDS_ENABLE, DEFAULT_EVENT_FEEDS_ENABLE ) )
@@ -210,9 +208,9 @@ void FacebookProto::UpdateLoop(void *)
 				break;
 		if ( !isOnline( ) )
 			break;
-    if ( i % 8 == 7 )
-      if ( !facy.idle_ )
-			  facy.chat_first_touch_ = true;
+		if ( i % 8 == 7 )
+			if ( !facy.idle_ )
+				facy.chat_first_touch_ = true;
 		/*if ( !facy.invisible_ )
         if ( !facy.keep_alive( ) )
 				  break;*/
@@ -228,7 +226,7 @@ void FacebookProto::UpdateLoop(void *)
 void FacebookProto::MessageLoop(void *)
 {
 	//ScopedLock s(message_loop_lock_); // TODO: Required?
-  time_t tim = ::time(NULL);
+	time_t tim = ::time(NULL);
 	LOG( ">>>>> Entering Facebook::MessageLoop[%d]", tim );
 
 	while ( facy.channel( ) )

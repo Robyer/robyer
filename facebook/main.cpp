@@ -55,7 +55,7 @@ PLUGININFOEX pluginInfo = {
 	UNICODE_AWARE, //not transient
 	0,             //doesn't replace anything built-in
 	// {8432B009-FF32-4727-AAE6-A9035038FD58}
-  { 0x8432b009, 0xff32, 0x4727, { 0xaa, 0xe6, 0xa9, 0x3, 0x50, 0x38, 0xfd, 0x58 } }
+	{ 0x8432b009, 0xff32, 0x4727, { 0xaa, 0xe6, 0xa9, 0x3, 0x50, 0x38, 0xfd, 0x58 } }
 
 };
 
@@ -84,7 +84,6 @@ extern "C" __declspec(dllexport) PLUGININFOEX* MirandaPluginInfoEx(DWORD miranda
 			MB_OK|MB_ICONWARNING|MB_SETFOREGROUND|MB_TOPMOST);
 		return NULL;
 	}
-
 	else if(mirandaVersion < PLUGIN_MAKE_VERSION(0,9,14,0))
 	{
 		MessageBox(0,_T("The Facebook protocol plugin cannot be loaded. ")
@@ -145,10 +144,10 @@ int OnModulesLoaded(WPARAM,LPARAM)
 		upd.pbBetaVersionPrefix  = reinterpret_cast<BYTE*>("Facebook RM ");
 		upd.cpbBetaVersionPrefix = (int)strlen(reinterpret_cast<char*>(upd.pbBetaVersionPrefix));
 		#ifdef _WIN64
-		  upd.szBetaUpdateURL      = "http://robyer.info/stahni/facebookRM_x64.zip";    
-    #else
-		  upd.szBetaUpdateURL      = "http://robyer.info/stahni/facebookRM.zip";  
-    #endif    
+			upd.szBetaUpdateURL      = "http://robyer.info/stahni/facebookRM_x64.zip";    
+		#else
+			upd.szBetaUpdateURL      = "http://robyer.info/stahni/facebookRM.zip";  
+		#endif    
 		upd.pbVersion = reinterpret_cast<BYTE*>( CreateVersionStringPlugin(
 			reinterpret_cast<PLUGININFO*>(&pluginInfo),curr_version) );
 		upd.cpbVersion = (int)strlen(reinterpret_cast<char*>(upd.pbVersion));
@@ -174,7 +173,8 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	pcli = reinterpret_cast<CLIST_INTERFACE*>( CallService(
 	    MS_CLIST_RETRIEVE_INTERFACE,0,reinterpret_cast<LPARAM>(g_hInstance)) );
 
-	PROTOCOLDESCRIPTOR pd = {sizeof(pd)};
+	PROTOCOLDESCRIPTOR pd = { 0 };
+	pd.cbSize = sizeof(pd);
 	pd.szName = "Facebook";
 	pd.type = PROTOTYPE_PROTOCOL;
 	pd.fnInit = protoInit;
@@ -212,8 +212,10 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 extern "C" int __declspec(dllexport) Unload(void)
 {
 	UninitContactMenus();
-  for(size_t i=1; i<SIZEOF(g_hEvents); i++)
+	for(size_t i=1; i<SIZEOF(g_hEvents); i++)
 		UnhookEvent(g_hEvents[i]);
+
+	g_Instances.destroy();
 
 	return 0;
 }

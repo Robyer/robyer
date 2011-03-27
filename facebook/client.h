@@ -42,11 +42,11 @@ public:
 		username_ = password_ = \
 		post_form_id_ = dtsg_ = \
 		chat_sequence_num_ = chat_channel_host_ = \
-    logout_hash_ = "";
+		logout_hash_ = "";
 
 		msgid_ = error_count_ = last_feeds_update_ = \
-    last_notification_time_ = last_message_time_ = \
-    last_grpmessage_time_ = last_close_chat_time_ = 0;
+		last_notification_time_ = last_message_time_ = \
+		last_grpmessage_time_ = last_close_chat_time_ = 0;
 
 		chat_first_touch_ = invisible_ = idle_ = is_typing_ = false;
 
@@ -73,13 +73,13 @@ public:
 	bool    chat_first_touch_;
 	bool    idle_;
 	bool    invisible_;
-  bool    is_typing_;
+	bool    is_typing_;
 	time_t  last_feeds_update_;
-  time_t  last_notification_time_;
-  time_t  last_message_time_;
-  time_t  last_grpmessage_time_;
-  time_t  last_close_chat_time_;
-  int     msgid_;
+	time_t  last_notification_time_;
+	time_t  last_message_time_;
+	time_t  last_grpmessage_time_;
+	time_t  last_close_chat_time_;
+	int     msgid_;
 
 	//bool api_check( );
 
@@ -100,7 +100,7 @@ public:
 	std::map< std::string, std::string >    headers;
 
 	std::string get_user_agent( );
-  std::string get_newsfeed_type( );
+	std::string get_newsfeed_type( );
 
 	std::string load_cookies( );
 	void    store_headers( http::response* resp, NETLIBHTTPHEADER* headers, int headers_count );

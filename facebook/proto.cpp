@@ -36,11 +36,11 @@ FacebookProto::FacebookProto(const char* proto_name,const TCHAR* username)
 	this->facy.parent = this;
 	this->facy.last_feeds_update_ = getDword( "LastNotificationsUpdate", 0 ); // RM TODO: is it useful?
 
-  this->signon_lock_ = CreateMutex( NULL, FALSE, TEXT("signon_lock_") );
+	this->signon_lock_ = CreateMutex( NULL, FALSE, TEXT("signon_lock_") );
 	this->avatar_lock_ = CreateMutex( NULL, FALSE, TEXT("avatar_lock_") );
 	this->log_lock_ = CreateMutex( NULL, FALSE, TEXT("log_lock_") );
 	this->facy.buddies_lock_ = CreateMutex( NULL, FALSE, TEXT("facy.buddies_lock_") );
-  this->facy.send_message_lock_ = CreateMutex( NULL, FALSE, TEXT("facy.send_message_lock_") );
+	this->facy.send_message_lock_ = CreateMutex( NULL, FALSE, TEXT("facy.send_message_lock_") );
 
 	CreateProtoService(m_szModuleName, PS_CREATEACCMGRUI, &FacebookProto::SvcCreateAccMgrUI, this);
 	CreateProtoService(m_szModuleName, PS_GETNAME,        &FacebookProto::GetName,           this);
@@ -49,7 +49,7 @@ FacebookProto::FacebookProto(const char* proto_name,const TCHAR* username)
 	CreateProtoService(m_szModuleName, PS_GETMYAWAYMSG,   &FacebookProto::GetMyAwayMsg,      this);
 	CreateProtoService(m_szModuleName, PS_SETAWAYMSG,     &FacebookProto::SetMyAwayMsg,      this);
 	CreateProtoService(m_szModuleName, PS_GETMYAVATAR,    &FacebookProto::GetMyAvatar,       this);
-  CreateProtoService(m_szModuleName, PS_GETAVATARINFO,  &FacebookProto::GetAvatarInfo,     this);
+	CreateProtoService(m_szModuleName, PS_GETAVATARINFO,  &FacebookProto::GetAvatarInfo,     this);
   // RM TODO: group chats
 /*  CreateProtoService(m_szModuleName,PS_JOINCHAT, &FacebookProto::OnJoinChat, this);
 	CreateProtoService(m_szModuleName,PS_LEAVECHAT,&FacebookProto::OnLeaveChat,this);*/
@@ -87,13 +87,13 @@ FacebookProto::FacebookProto(const char* proto_name,const TCHAR* username)
 	// Set all contacts offline -- in case we crashed
 	SetAllContactStatuses( ID_STATUS_OFFLINE );
 
-  // Check plugin API
+	// Check plugin API
 	//facy.api_check( );
 }
 
 FacebookProto::~FacebookProto( )
 {
-	KillThreads( );
+	KillThreads( false );
 	Netlib_CloseHandle( m_hNetlibUser );
 
 	WaitForSingleObject( this->signon_lock_, IGNORE );
@@ -129,12 +129,12 @@ DWORD_PTR FacebookProto::GetCaps( int type, HANDLE hContact )
 		else
 			return PF1_IM | PF1_MODEMSGRECV;
 	case PFLAGNUM_2:
-    return PF2_ONLINE | PF2_IDLE | PF2_INVISIBLE | PF2_SHORTAWAY;
+		return PF2_ONLINE | PF2_IDLE | PF2_INVISIBLE | PF2_SHORTAWAY;
 	case PFLAGNUM_3:
 		if ( getByte( FACEBOOK_KEY_SET_MIRANDA_STATUS, 0 ) )
-      return PF2_ONLINE | PF2_SHORTAWAY;
-    else
-      return 0;
+			return PF2_ONLINE | PF2_SHORTAWAY;
+		else
+			return 0;
 	case PFLAGNUM_4:
 		return PF4_FORCEAUTH | PF4_NOCUSTOMAUTH | PF4_SUPPORTIDLE | PF4_IMSENDUTF | PF4_AVATARS | PF4_SUPPORTTYPING | PF4_NOAUTHDENYREASON | PF4_IMSENDOFFLINE;
 	case PFLAG_MAXLENOFMESSAGE:
@@ -153,9 +153,9 @@ HICON FacebookProto::GetIcon(int index)
 	{
 		HICON ico = (HICON)CallService(MS_SKIN2_GETICON,0,(LPARAM)"Facebook_facebook");
 		return CopyIcon(ico);
-	}
-	else
+	} else {
 		return 0;
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -163,78 +163,83 @@ HICON FacebookProto::GetIcon(int index)
 int FacebookProto::SetStatus( int new_status )
 {
 	// Routing statuses not supported by Facebook
-  switch ( new_status )
-  {
-  case ID_STATUS_FREECHAT:
-    new_status = ID_STATUS_ONLINE;
-    break;
-  case ID_STATUS_DND:
-  case ID_STATUS_NA:
-  case ID_STATUS_OCCUPIED:
-  case ID_STATUS_ONTHEPHONE:
-  case ID_STATUS_OUTTOLUNCH:
-    new_status = ID_STATUS_AWAY;
-    break;
-  }
+	switch ( new_status )
+	{
+	case ID_STATUS_FREECHAT:
+		new_status = ID_STATUS_ONLINE;
+		break;
 
-  int old_status = m_iStatus;
-  m_iDesiredStatus = new_status;
+	case ID_STATUS_DND:
+	case ID_STATUS_NA:
+	case ID_STATUS_OCCUPIED:
+	case ID_STATUS_ONTHEPHONE:
+	case ID_STATUS_OUTTOLUNCH:
+		new_status = ID_STATUS_AWAY;
+		break;
+
+	case ID_STATUS_CONNECTING:
+		new_status = ID_STATUS_OFFLINE;
+		break;
+	}
+
+	int old_status = m_iStatus;
+	m_iDesiredStatus = new_status;
 
 	if ( new_status == old_status)
 		return 0;
 
-  if ( old_status == ID_STATUS_CONNECTING && new_status != ID_STATUS_OFFLINE )
+	if ( old_status == ID_STATUS_CONNECTING && new_status != ID_STATUS_OFFLINE )
 		return 0;
 
-  facy.idle_ = ( new_status != ID_STATUS_ONLINE && new_status != ID_STATUS_OFFLINE );
-  facy.invisible_ = ( new_status == ID_STATUS_INVISIBLE );
+	facy.idle_ = ( new_status != ID_STATUS_ONLINE && new_status != ID_STATUS_OFFLINE );
+	facy.invisible_ = ( new_status == ID_STATUS_INVISIBLE );
 
-  if ( new_status == ID_STATUS_OFFLINE )
+	if ( new_status == ID_STATUS_OFFLINE )
 	{
-    m_iStatus = facy.self_.status_id = ID_STATUS_CONNECTING;
-    ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS, 
-    (HANDLE)old_status,m_iStatus);
+		m_iStatus = facy.self_.status_id = ID_STATUS_CONNECTING;
+		ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS, 
+			(HANDLE)old_status,m_iStatus);
 
 		ForkThread( &FacebookProto::SignOff, this );
 	}
-  else if ( old_status == ID_STATUS_OFFLINE )
-  {
-    m_iStatus = facy.self_.status_id = ID_STATUS_CONNECTING;
-    ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS, 
-    (HANDLE)old_status,m_iStatus);
+	else if ( old_status == ID_STATUS_OFFLINE )
+	{
+		m_iStatus = facy.self_.status_id = ID_STATUS_CONNECTING;
+		ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS, 
+			(HANDLE)old_status,m_iStatus);
 
-    ForkThread( &FacebookProto::SignOn, this );
-  }
-  else if ( old_status == ID_STATUS_INVISIBLE )
-  {
-    m_iStatus = facy.self_.status_id = ID_STATUS_CONNECTING;
-    ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS, 
-    (HANDLE)old_status,m_iStatus);
+		ForkThread( &FacebookProto::SignOn, this );
+	}
+	else if ( old_status == ID_STATUS_INVISIBLE )
+	{
+		m_iStatus = facy.self_.status_id = ID_STATUS_CONNECTING;
+		ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS, 
+			(HANDLE)old_status,m_iStatus);
 
-    ForkThread( &FacebookProto::ChangeStatus, this );
-  }
-  else if ( new_status == ID_STATUS_INVISIBLE )
-  {
-    m_iStatus = facy.self_.status_id = ID_STATUS_INVISIBLE;
-    ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS, 
-    (HANDLE)old_status,m_iStatus);
+		ForkThread( &FacebookProto::ChangeStatus, this );
+	}
+	else if ( new_status == ID_STATUS_INVISIBLE )
+	{
+		m_iStatus = facy.self_.status_id = ID_STATUS_INVISIBLE;
+		ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS, 
+			(HANDLE)old_status,m_iStatus);
 
-    facy.chat_state( false );
-    facy.buddies.clear( );
-    this->SetAllContactStatuses( ID_STATUS_OFFLINE );
-  }
-  else if ( old_status == ID_STATUS_AWAY )
-  {
-	facy.chat_first_touch_ = true;
+		facy.chat_state( false );
+		facy.buddies.clear( );
+		this->SetAllContactStatuses( ID_STATUS_OFFLINE );
+	}
+	else if ( old_status == ID_STATUS_AWAY )
+	{
+		facy.chat_first_touch_ = true;
 
-    m_iStatus = facy.self_.status_id = new_status;
-    ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS, 
-    (HANDLE)old_status,m_iStatus);
-  } else { 
-    m_iStatus = facy.self_.status_id = new_status;
-    ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS, 
-    (HANDLE)old_status,m_iStatus);
-  }
+		m_iStatus = facy.self_.status_id = new_status;
+		ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS, 
+			(HANDLE)old_status,m_iStatus);
+	} else { 
+		m_iStatus = facy.self_.status_id = new_status;
+		ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS, 
+			(HANDLE)old_status,m_iStatus);
+	}
   
 	return 0;
 }
@@ -279,9 +284,9 @@ int FacebookProto::GetMyAwayMsg( WPARAM wParam, LPARAM lParam )
 		int res = (lParam & SGMA_UNICODE) ? (INT_PTR)mir_t2u(dbv.ptszVal) : (INT_PTR)mir_t2a(dbv.ptszVal);
 		DBFreeVariant( &dbv );
 		return res;
-	}
-	else
+	} else {
 		return 0;
+	}
 }
 
 int FacebookProto::SetMyAwayMsg( WPARAM wParam, LPARAM lParam )
@@ -295,9 +300,14 @@ int FacebookProto::OnEvent(PROTOEVENTTYPE event,WPARAM wParam,LPARAM lParam)
 {
 	switch(event)
 	{
-	case EV_PROTO_ONLOAD:    return OnModulesLoaded(wParam,lParam);
-	case EV_PROTO_ONEXIT:    return OnPreShutdown  (wParam,lParam);
-	case EV_PROTO_ONOPTIONS: return OnOptionsInit  (wParam,lParam);
+	case EV_PROTO_ONLOAD:
+		return OnModulesLoaded(wParam,lParam);
+
+	case EV_PROTO_ONEXIT:
+		return OnPreShutdown  (wParam,lParam);
+	
+	case EV_PROTO_ONOPTIONS:
+		return OnOptionsInit  (wParam,lParam);
 	}
 
 	return 1;
@@ -318,18 +328,19 @@ int FacebookProto::SvcCreateAccMgrUI(WPARAM wParam,LPARAM lParam)
 		 (HWND)lParam, FBAccountProc, (LPARAM)this );
 }
 
+/* // RM TODO: group chats
 int FacebookProto::OnModulesLoaded(WPARAM wParam,LPARAM lParam)
 {
-  // Register group chat
-  GCREGISTER gcr = {sizeof(gcr)};
-  gcr.dwFlags = GC_ACKMSG;
+	// Register group chat
+	GCREGISTER gcr = {sizeof(gcr)};
+	gcr.dwFlags = GC_ACKMSG;
 	gcr.pszModule = m_szModuleName;
 	gcr.pszModuleDispName = m_szModuleName;
 	gcr.iMaxText = FACEBOOK_MESSAGE_LIMIT;
 	CallService(MS_GC_REGISTER,0,reinterpret_cast<LPARAM>(&gcr));
   
-  return 0;
-}
+	return 0;
+}*/
 
 int FacebookProto::OnPreShutdown(WPARAM wParam,LPARAM lParam)
 {
@@ -383,17 +394,20 @@ int FacebookProto::OnBuildStatusMenu(WPARAM wParam,LPARAM lParam)
 	mi.pszService = text;
 
 	hRoot = MO_GetProtoRootMenu(m_szModuleName);
-	if (hRoot == NULL) {
+	if (hRoot == NULL)
+	{
 		mi.popupPosition = 500085000;
 		mi.hParentMenu = HGENMENU_ROOT;
 		mi.flags = CMIF_ICONFROMICOLIB | CMIF_ROOTPOPUP | CMIF_TCHAR | CMIF_KEEPUNTRANSLATED | ( this->isOnline() ? 0 : CMIF_GRAYED );
 		mi.icolibItem = GetIconHandle( "facebook" );
 		mi.ptszName = m_tszUserName;
 		hRoot = m_hMenuRoot = reinterpret_cast<HGENMENU>( CallService(
-			MS_CLIST_ADDPROTOMENUITEM,0,reinterpret_cast<LPARAM>(&mi)) ); }
-	else {
-		if ( m_hMenuRoot ) CallService( MS_CLIST_REMOVEMAINMENUITEM, ( WPARAM )m_hMenuRoot, 0 );
-		m_hMenuRoot = NULL; }
+			MS_CLIST_ADDPROTOMENUITEM,0,reinterpret_cast<LPARAM>(&mi)) );
+	} else {
+		if ( m_hMenuRoot )
+			CallService( MS_CLIST_REMOVEMAINMENUITEM, ( WPARAM )m_hMenuRoot, 0 );
+		m_hMenuRoot = NULL;
+	}
 
 	mi.flags = CMIF_ICONFROMICOLIB | CMIF_CHILDPOPUP | ( this->isOnline() ? 0 : CMIF_GRAYED );
 	mi.position = 201001;
@@ -406,11 +420,12 @@ int FacebookProto::OnBuildStatusMenu(WPARAM wParam,LPARAM lParam)
 	m_hStatusMind = reinterpret_cast<HGENMENU>( CallService(
 		MS_CLIST_ADDPROTOMENUITEM,0,reinterpret_cast<LPARAM>(&mi)) );
 
-  CreateProtoService(m_szModuleName,"/VisitProfile",&FacebookProto::VisitProfile,this);
+	CreateProtoService(m_szModuleName,"/VisitProfile",&FacebookProto::VisitProfile,this);
 	strcpy(tDest,"/VisitProfile");
-  mi.flags = CMIF_ICONFROMICOLIB | CMIF_CHILDPOPUP;
+	mi.flags = CMIF_ICONFROMICOLIB | CMIF_CHILDPOPUP;
 	mi.pszName = LPGEN("Visit Profile");
 	mi.icolibItem = GetIconHandle("homepage");
+	// RM TODO: remember and properly free in destructor
 	/*m_hStatusMind = */reinterpret_cast<HGENMENU>( CallService(
 		MS_CLIST_ADDPROTOMENUITEM,0,reinterpret_cast<LPARAM>(&mi)) );
 
@@ -427,36 +442,34 @@ int FacebookProto::OnMind(WPARAM,LPARAM)
 
 int FacebookProto::VisitProfile(WPARAM wParam,LPARAM lParam)
 {
-  if (wParam == NULL)
-  { // self contact
-    CallService(MS_UTILS_OPENURL,1,reinterpret_cast<LPARAM>(FACEBOOK_URL_PROFILE));
-    return 0;
-  }
+	if (wParam == NULL)
+	{ // self contact
+		CallService(MS_UTILS_OPENURL,1,reinterpret_cast<LPARAM>(FACEBOOK_URL_PROFILE));
+		return 0;
+	}
 
-  HANDLE hContact = reinterpret_cast<HANDLE>(wParam);
+	HANDLE hContact = reinterpret_cast<HANDLE>(wParam);
 
 	DBVARIANT dbv;
 	if( !DBGetContactSettingString(hContact,m_szModuleName,"Homepage",&dbv) )
 	{
 		CallService(MS_UTILS_OPENURL,1,reinterpret_cast<LPARAM>(dbv.pszVal));
 		DBFreeVariant(&dbv);
-	}
-	else
-	{
+	} else {
 		// RM TODO: remove this
-    std::string key, url;
-    if (DBGetContactSettingByte(hContact,m_szModuleName,"ChatRoom",0) == 0)
-    { // usual contact
-      key = FACEBOOK_KEY_ID;
-      url = FACEBOOK_URL_PROFILE;
-    } else {
-      key = "ChatRoomID";
-      url = FACEBOOK_URL_GROUP;
-    }
+		std::string key, url;
+		if (DBGetContactSettingByte(hContact,m_szModuleName,"ChatRoom",0) == 0)
+		{ // usual contact
+			key = FACEBOOK_KEY_ID;
+			url = FACEBOOK_URL_PROFILE;
+		} else {
+			key = "ChatRoomID";
+			url = FACEBOOK_URL_GROUP;
+		}
 
-    if( !DBGetContactSettingString(hContact,m_szModuleName,key.c_str(),&dbv) )
+		if ( !DBGetContactSettingString(hContact,m_szModuleName,key.c_str(),&dbv) )
 		{
-      url += dbv.pszVal;
+			url += dbv.pszVal;
 			DBWriteContactSettingString(hContact,m_szModuleName,"Homepage",url.c_str());
 
 			CallService(MS_UTILS_OPENURL,1,reinterpret_cast<LPARAM>(url.c_str()));
@@ -469,10 +482,10 @@ int FacebookProto::VisitProfile(WPARAM wParam,LPARAM lParam)
 
 void FacebookProto::ToggleStatusMenuItems( BOOL bEnable )
 {
-  CLISTMENUITEM clmi = { 0 };
+	CLISTMENUITEM clmi = { 0 };
 	clmi.cbSize = sizeof( CLISTMENUITEM );
 	clmi.flags = CMIM_FLAGS | (( bEnable ) ? 0 : CMIF_GRAYED);
 
-  CallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )m_hMenuRoot,   ( LPARAM )&clmi );
-  CallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )m_hStatusMind, ( LPARAM )&clmi );
+	CallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )m_hMenuRoot,   ( LPARAM )&clmi );
+	CallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )m_hStatusMind, ( LPARAM )&clmi );
 }

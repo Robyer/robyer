@@ -73,8 +73,8 @@ int facebook_json_parser::parse_buddy_list( void* data, List::List< facebook_use
 			const Boolean idle = objMember["i"];
 
 			current->user_id = current->real_name = member.name;
-      current->is_idle = ( idle.Value( ) == 1 );
-      current->status_id = current->is_idle ? ID_STATUS_AWAY : ID_STATUS_ONLINE;			
+			current->is_idle = ( idle.Value( ) == 1 );
+			current->status_id = current->is_idle ? ID_STATUS_AWAY : ID_STATUS_ONLINE;			
 		}
 
 		const Object& userInfosList = objRoot["payload"]["buddy_list"]["userInfos"];
@@ -94,6 +94,7 @@ int facebook_json_parser::parse_buddy_list( void* data, List::List< facebook_use
 
 			current->real_name = utils::text::slashu_to_utf8(
 			    utils::text::special_expressions_decode( realName.Value( ) ) );
+			current->image_url = FACEBOOK_DEFAULT_AVATAR_URL;
 			current->thumb_url = utils::text::slashu_to_utf8(
 			    utils::text::special_expressions_decode( imageUrl.Value( ) ) );
 		}
@@ -145,91 +146,91 @@ int facebook_json_parser::parse_messages( void* data, std::vector< facebook_mess
 				const Object& messageContent = objMember["msg"];
 				const String& text = messageContent["text"];
         
-        const Number& time_sent = messageContent["time"];
-        if (time_sent.Value() > proto->facy.last_message_time_) // Check agains duplicit messages
-        {
-          proto->facy.last_message_time_ = time_sent.Value();
+				const Number& time_sent = messageContent["time"];
+				if (time_sent.Value() > proto->facy.last_message_time_) // Check agains duplicit messages
+				{
+					proto->facy.last_message_time_ = time_sent.Value();
 
-  			  facebook_message* message = new facebook_message( );
-				  message->message_text= utils::text::special_expressions_decode(
-					  utils::text::slashu_to_utf8( text.Value( ) ) );
-				  message->time = ::time( NULL );
-				  message->user_id = was_id;
+  					facebook_message* message = new facebook_message( );
+					message->message_text= utils::text::special_expressions_decode(
+						utils::text::slashu_to_utf8( text.Value( ) ) );
+					message->time = ::time( NULL );
+					message->user_id = was_id;
 
-				  messages->push_back( message );
-        }
+					messages->push_back( message );
+				}
 			}
-      else if ( type.Value( ) == "group_msg" ) // chat message
+			else if ( type.Value( ) == "group_msg" ) // chat message
 			{
-        if ( (::time(NULL) - proto->facy.last_grpmessage_time_) < 15 ) // RM TODO: remove dont notify more than once every 15 secs
-          continue;
+				if ( (::time(NULL) - proto->facy.last_grpmessage_time_) < 15 ) // RM TODO: remove dont notify more than once every 15 secs
+					continue;
 
-        proto->facy.last_grpmessage_time_ = ::time(NULL);
+				proto->facy.last_grpmessage_time_ = ::time(NULL);
         
-        const String& from_name = objMember["from_name"];
-        const String& group_name = objMember["to_name"];
+				const String& from_name = objMember["from_name"];
+				const String& group_name = objMember["to_name"];
 
-        const Number& to = objMember["to"];
+				const Number& to = objMember["to"];
 				char group_id[32];
 				lltoa( to.Value(), group_id, 10 );
-
-        const Number& from = objMember["from"];
+	
+				const Number& from = objMember["from"];
 				char was_id[32];
 				lltoa( from.Value(), was_id, 10 );
 
-//      Ignore if message is from this user
-        if (was_id == proto->facy.self_.user_id) continue;
+				//      Ignore if message is from this user
+				if (was_id == proto->facy.self_.user_id) continue;
 
-        const Object& messageContent = objMember["msg"];
-  			const String& text = messageContent["text"];
+				const Object& messageContent = objMember["msg"];
+  				const String& text = messageContent["text"];
 
-        std::string popup_text = utils::text::remove_html(
+				std::string popup_text = utils::text::remove_html(
 					utils::text::special_expressions_decode(
 						utils::text::slashu_to_utf8( from_name.Value( ) ) ) );
-        popup_text += ": ";
-        popup_text += utils::text::remove_html(
+				popup_text += ": ";
+				popup_text += utils::text::remove_html(
 					utils::text::special_expressions_decode(
 						utils::text::slashu_to_utf8( text.Value( ) ) ) );
 
-        std::string title = Translate("Groupchat");
-        title += ": ";
-        title += utils::text::remove_html(
+				std::string title = Translate("Groupchat");
+				title += ": ";
+				title += utils::text::remove_html(
 					utils::text::special_expressions_decode(
 						utils::text::slashu_to_utf8( group_name.Value( ) ) ) );
 
-        std::string url = "/home.php?sk=group_";
-        url += group_id;
+				std::string url = "/home.php?sk=group_";
+				url += group_id;
 
-        proto->Log("      Got groupchat message");
+				proto->Log("      Got groupchat message");
 		    
-        TCHAR* szTitle = mir_a2t_cp(title.c_str(), CP_UTF8);
-        TCHAR* szText = mir_a2t_cp(popup_text.c_str(), CP_UTF8);
-        TCHAR* szUrl = mir_a2t_cp(url.c_str(), CP_UTF8);
-        proto->NotifyEvent(szTitle,szText,NULL,FACEBOOK_EVENT_OTHER, szUrl);
-        mir_free(szTitle);
-	      mir_free(szText);
+				TCHAR* szTitle = mir_a2t_cp(title.c_str(), CP_UTF8);
+				TCHAR* szText = mir_a2t_cp(popup_text.c_str(), CP_UTF8);
+				TCHAR* szUrl = mir_a2t_cp(url.c_str(), CP_UTF8);
+				proto->NotifyEvent(szTitle,szText,NULL,FACEBOOK_EVENT_OTHER, szUrl);
+				mir_free(szTitle);
+				mir_free(szText);
 			}
 			else if ( type.Value( ) == "app_msg" ) // event notification
 			{
 				const String& text = objMember["response"]["payload"]["title"];
 				const String& link = objMember["response"]["payload"]["link"];
-        // RM TODO: include additional text of notification if exits? (e.g. comment text)
-        //const String& text2 = objMember["response"]["payload"]["alert"]["text"];
+				// RM TODO: include additional text of notification if exits? (e.g. comment text)
+				//const String& text2 = objMember["response"]["payload"]["alert"]["text"];
 
-        const Number& time_sent = objMember["response"]["payload"]["alert"]["time_sent"];        
-        if (time_sent.Value() > proto->facy.last_notification_time_) // Check agains duplicit notifications
-        {
-          proto->facy.last_notification_time_ = time_sent.Value();
+				const Number& time_sent = objMember["response"]["payload"]["alert"]["time_sent"];        
+				if (time_sent.Value() > proto->facy.last_notification_time_) // Check agains duplicit notifications
+				{
+					proto->facy.last_notification_time_ = time_sent.Value();
 
-				  facebook_notification* notification = new facebook_notification( );
-				  notification->text = utils::text::remove_html(
-  					utils::text::special_expressions_decode(
-						  utils::text::slashu_to_utf8( text.Value( ) ) ) );
+					facebook_notification* notification = new facebook_notification( );
+					notification->text = utils::text::remove_html(
+  						utils::text::special_expressions_decode(
+							utils::text::slashu_to_utf8( text.Value( ) ) ) );
 
-  				notification->link = utils::text::special_expressions_decode( link.Value( ) );
+  					notification->link = utils::text::special_expressions_decode( link.Value( ) );
 
-				  notifications->push_back( notification );
-        }
+					notifications->push_back( notification );
+				}
 			}
 			else if ( type.Value( ) == "typ" ) // chat typing notification
 			{
@@ -242,8 +243,8 @@ int facebook_json_parser::parse_messages( void* data, std::vector< facebook_mess
 
 				HANDLE hContact = proto->AddToContactList(&fbu);
 				
-        if ( DBGetContactSettingWord(hContact,proto->m_szModuleName,"Status", 0) == ID_STATUS_OFFLINE )
-          DBWriteContactSettingWord(hContact,proto->m_szModuleName,"Status",ID_STATUS_ONLINE);
+				if ( DBGetContactSettingWord(hContact,proto->m_szModuleName,"Status", 0) == ID_STATUS_OFFLINE )
+					DBWriteContactSettingWord(hContact,proto->m_szModuleName,"Status",ID_STATUS_ONLINE);
 
 				const Number& state = objMember["st"];
 				if (state.Value() == 1)
@@ -253,15 +254,15 @@ int facebook_json_parser::parse_messages( void* data, std::vector< facebook_mess
 			}
 			else if ( type.Value( ) == "inbox" )
 			{
-        if ( proto->m_iStatus == ID_STATUS_INVISIBLE )
-        { // Notify messages only in invisible status
-          TCHAR info[512]; char num[32];
-				  const Number& unseen = objMember["unseen"];
+				if ( proto->m_iStatus == ID_STATUS_INVISIBLE )
+				{ // Notify messages only in invisible status
+					TCHAR info[512]; char num[32];
+					const Number& unseen = objMember["unseen"];
 
-				  lltoa( unseen.Value(), num, 10 );
-				  mir_sntprintf(info, 500, TranslateT("You have %s unseen messages"), num);
-				  proto->NotifyEvent(TranslateT("Unseen messages"), info, NULL, FACEBOOK_EVENT_OTHER, TEXT( FACEBOOK_URL_MESSAGES ) );
-        }
+					lltoa( unseen.Value(), num, 10 );
+					mir_sntprintf(info, 500, TranslateT("You have %s unseen messages"), num);
+					proto->NotifyEvent(TranslateT("Unseen messages"), info, NULL, FACEBOOK_EVENT_OTHER, TEXT( FACEBOOK_URL_MESSAGES ) );
+				}
 			}
 			else
 				continue;

@@ -73,6 +73,7 @@ namespace List
 		{
 			return first;
 		}
+
 		Item< T >* end( )
 		{
 			return last;
@@ -94,9 +95,7 @@ namespace List
 			{
 				this->first = this->last = item;
 				this->count = 1;
-			}
-			else
-			{ // TODO: key sorting/comparation
+			} else { // TODO: key sorting/comparation
 				item->next = this->first;
 				this->first->prev = item;
 				this->first = item;
@@ -115,65 +114,66 @@ namespace List
 		{
 			Item< T >* help = this->first;
 			while ( help != NULL )
-      {
+			{
 				if ( help->key.compare( key ) != 0 )
-          help = help->next;
-        else
-        {
-			    if ( help == this->first )
-          {
-				    this->first = help->next;
-				    if ( this->first != NULL )
-              this->first->prev = NULL;
-				    else
-              this->last = NULL;
-          }
-          else if ( help == this->last )
-          {
-				    this->last = help->prev;
-				    if ( this->last != NULL )
-              this->last->next = NULL;
-				    else
-              this->first = NULL;
-          }
-          else
-          {
-				    help->prev->next = help->next;
-				    help->next->prev = help->prev;
-          }
-          if (help != NULL)
-          {
-            this->count--;            
-            delete help;
-          }
-          break;
-        }
-      }
+					help = help->next;
+				else
+				{
+					if ( help == this->first )
+					{
+						this->first = help->next;
+						if ( this->first != NULL )
+							this->first->prev = NULL;
+						else
+							this->last = NULL;
+					}
+					else if ( help == this->last )
+					{
+						this->last = help->prev;
+						if ( this->last != NULL )
+							this->last->next = NULL;
+						else
+							this->first = NULL;
+					}
+					else
+					{
+						help->prev->next = help->next;
+						help->next->prev = help->prev;
+					}
+					if (help != NULL)
+					{
+						this->count--;            
+						delete help;
+					}
+					break;
+				}
+			}
 		}
 
 		void erase( Item< T >* item )
 		{
 			if (item != NULL)
-        erase( item->key );
+				erase( item->key );
 		}
 
 		T* find( std::string key )
 		{
 			Item< T >* help = this->begin( );
-      while ( help != NULL )
-      {
+			while ( help != NULL )
+			{
 				if ( help->key.compare( key ) != 0 )
-          help = help->next;
-        else
-          return help->data;
-      }
+					help = help->next;
+				else
+					return help->data;
+			}
 			return NULL;
 		}
 
 		T* at( const unsigned int item )
 		{
-      if (item >= this->count) return NULL;
-      Item< T >* help = this->begin( );
+			if (item >= this->count)
+				return NULL;
+			Item< T >* help = this->begin( );
 			for ( unsigned int i = 0; i < item; i++ )
 				help = help->next;
 			return help->item;
@@ -186,15 +186,15 @@ namespace List
 
 		void clear( )
 		{
-      Item< T >* help;
-      while ( this->first != NULL )
-      {
-        help = this->first;
-        this->first = this->first->next;
-        delete help;
-      }      
-      this->last = NULL;
-      this->count = 0;
+			Item< T >* help;
+			while ( this->first != NULL )
+			{
+				help = this->first;
+				this->first = this->first->next;
+				delete help;
+			}      
+			this->last = NULL;
+			this->count = 0;
 		}
 	};
 };
