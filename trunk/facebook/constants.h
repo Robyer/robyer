@@ -129,7 +129,7 @@ static const struct
 	char *name;
 	char *id;
 } user_agents[] = {
-  { "Miranda IM (default)", "Miranda IM (default)" },
+	{ "Miranda IM (default)", "Miranda IM (default)" },
 	{ "Internet Explorer 8", "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0)" },
 	{ "Internet Explorer 9", "Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)" },
 	{ "Mozilla Firefox 4.0", "Mozilla/5.0 (Windows NT 6.1; rv:2.0) Gecko/20100101 Firefox/4.0" },

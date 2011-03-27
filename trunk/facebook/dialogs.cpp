@@ -124,7 +124,7 @@ INT_PTR CALLBACK FBMindProc( HWND hwnd, UINT message, WPARAM wparam, LPARAM lpar
 	{
 
 	case WM_INITDIALOG:
-  {
+	{
 		TranslateDialogDefault(hwnd);
 
 		proto = reinterpret_cast<FacebookProto*>(lparam);
@@ -138,7 +138,7 @@ INT_PTR CALLBACK FBMindProc( HWND hwnd, UINT message, WPARAM wparam, LPARAM lpar
 			SetWindowText( hwnd, dbv.ptszVal );
 			DBFreeVariant( &dbv );
 		}
-  }
+	}
 
 	EnableWindow(GetDlgItem( hwnd, IDOK ), FALSE);
 	return TRUE;
@@ -189,7 +189,7 @@ INT_PTR CALLBACK FBOptionsProc( HWND hwnd, UINT message, WPARAM wparam, LPARAM l
 	{
 
 	case WM_INITDIALOG:
-  {
+	{
 		TranslateDialogDefault(hwnd);
 
 		proto = reinterpret_cast<FacebookProto*>(lparam);
@@ -211,10 +211,10 @@ INT_PTR CALLBACK FBOptionsProc( HWND hwnd, UINT message, WPARAM wparam, LPARAM l
 		}
 
 		if (!proto->isOffline())
-    {
+	    {
 			SendMessage(GetDlgItem(hwnd,IDC_UN),EM_SETREADONLY,TRUE,0);
 			SendMessage(GetDlgItem(hwnd,IDC_PW),EM_SETREADONLY,TRUE,0);
-    }
+		}
 
 		SendDlgItemMessage(hwnd, IDC_GROUP, EM_LIMITTEXT, FACEBOOK_GROUP_NAME_LIMIT, 0);
 
@@ -315,13 +315,13 @@ INT_PTR CALLBACK FBEventsProc( HWND hwnd, UINT message, WPARAM wparam, LPARAM lp
 	{
 
 	case WM_INITDIALOG:
-  {
+	{
 		TranslateDialogDefault(hwnd);
 
 		proto = reinterpret_cast<FacebookProto*>(lparam);
 		SetWindowLong(hwnd,GWLP_USERDATA,lparam);
 
-    for(size_t i=0; i<SIZEOF(feed_types); i++)
+		for(size_t i=0; i<SIZEOF(feed_types); i++)
 		{
 			SendDlgItemMessageA(hwnd,IDC_FEED_TYPE,CB_INSERTSTRING,i,
 				reinterpret_cast<LPARAM>(Translate(feed_types[i].name)));
@@ -366,10 +366,9 @@ INT_PTR CALLBACK FBEventsProc( HWND hwnd, UINT message, WPARAM wparam, LPARAM lp
 
 	case WM_COMMAND: {
 		switch ( LOWORD( wparam ) )
-    {
-
+		{
 		case IDC_PREVIEW:
-    {
+		{
 			TCHAR protoName[255];
 			lstrcpy( protoName, proto->m_tszUserName );
 			proto->NotifyEvent( protoName, TranslateT("Sample event"), NULL, FACEBOOK_EVENT_CLIENT ); 
@@ -388,7 +387,6 @@ INT_PTR CALLBACK FBEventsProc( HWND hwnd, UINT message, WPARAM wparam, LPARAM lp
 		case IDC_COLBACK4:
 			SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
 			// TODO: Required? There's a catching clause below
-
 		}
 
 		if ((LOWORD(wparam)==IDC_PREVIEW || (HWND)lparam!=GetFocus()))
@@ -399,13 +397,13 @@ INT_PTR CALLBACK FBEventsProc( HWND hwnd, UINT message, WPARAM wparam, LPARAM lp
 		return TRUE;
 
 	case WM_NOTIFY:
-  {
+	{
 		if ( reinterpret_cast<NMHDR*>(lparam)->code == PSN_APPLY )
 		{
 			DBWriteContactSettingByte(NULL, proto->m_szModuleName, FACEBOOK_KEY_FEED_TYPE,
 			    SendDlgItemMessage(hwnd, IDC_FEEDS_TYPE, CB_GETCURSEL, 0, 0));
 
-      StoreDBCheckState(proto, hwnd, IDC_NOTIFICATIONS_ENABLE, FACEBOOK_KEY_EVENT_NOTIFICATIONS_ENABLE);
+			StoreDBCheckState(proto, hwnd, IDC_NOTIFICATIONS_ENABLE, FACEBOOK_KEY_EVENT_NOTIFICATIONS_ENABLE);
 			StoreDBCheckState(proto, hwnd, IDC_FEEDS_ENABLE, FACEBOOK_KEY_EVENT_FEEDS_ENABLE);
 			StoreDBCheckState(proto, hwnd, IDC_OTHER_ENABLE, FACEBOOK_KEY_EVENT_OTHER_ENABLE);
 			StoreDBCheckState(proto, hwnd, IDC_CLIENT_ENABLE, FACEBOOK_KEY_EVENT_CLIENT_ENABLE);
@@ -432,7 +430,7 @@ INT_PTR CALLBACK FBEventsProc( HWND hwnd, UINT message, WPARAM wparam, LPARAM lp
 			DBWriteContactSettingDword(NULL, proto->m_szModuleName, FACEBOOK_KEY_EVENT_CLIENT_COLTEXT, SendDlgItemMessage(hwnd,IDC_COLTEXT4,CPM_GETCOLOUR,0,0));
 			DBWriteContactSettingDword(NULL, proto->m_szModuleName, FACEBOOK_KEY_EVENT_CLIENT_TIMEOUT, GetDlgItemInt(hwnd,IDC_TIMEOUT4,NULL,TRUE));
 		}
-  }
+	}
 	return TRUE;
 
 	}
@@ -448,7 +446,7 @@ INT_PTR CALLBACK FBInfoDialogProc( HWND hwnd, UINT message, WPARAM wparam, LPARA
 	{
 
 	case WM_INITDIALOG:
-  {
+	{
 		TranslateDialogDefault(hwnd);
 
 		hFont = CreateFont( 14, 0, 0, 0, 400, 0, 0, 0, 1, 0, 0, 0, 2, TEXT( "Courier New" ) );
@@ -476,7 +474,6 @@ INT_PTR CALLBACK FBInfoDialogProc( HWND hwnd, UINT message, WPARAM wparam, LPARA
 		EnableWindow(GetParent(hwnd),TRUE);
 		SetFocus(GetParent(hwnd));
 		break;
-
 	}
 
 	return FALSE;

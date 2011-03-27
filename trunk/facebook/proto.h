@@ -116,8 +116,8 @@ public:
 	int  __cdecl SetMyAwayMsg( WPARAM, LPARAM );
 	int  __cdecl SvcCreateAccMgrUI( WPARAM, LPARAM );
 	int  __cdecl GetMyAvatar(WPARAM, LPARAM );
-  int  __cdecl GetAvatarInfo(WPARAM, LPARAM );
-  int  __cdecl VisitProfile(WPARAM, LPARAM );
+	int  __cdecl GetAvatarInfo(WPARAM, LPARAM );
+	int  __cdecl VisitProfile(WPARAM, LPARAM );
 
 	// Events
 	int  __cdecl OnModulesLoaded(WPARAM, LPARAM);
@@ -126,36 +126,36 @@ public:
 	int  __cdecl OnContactDeleted(WPARAM,LPARAM);
 	int  __cdecl OnMind(WPARAM,LPARAM);
 	int  __cdecl OnPreShutdown(WPARAM,LPARAM);
-  int  __cdecl OnPrebuildContactMenu(WPARAM,LPARAM);
-  // RM TODO: Chat handling
-  /*  int  __cdecl OnChatOutgoing(WPARAM,LPARAM);
+	int  __cdecl OnPrebuildContactMenu(WPARAM,LPARAM);
+	// RM TODO: Chat handling
+	/*  int  __cdecl OnChatOutgoing(WPARAM,LPARAM);
 	int  __cdecl OnJoinChat(WPARAM,LPARAM);
 	int  __cdecl OnLeaveChat(WPARAM,LPARAM);*/
 
 	// Loops
-	bool    NegotiateConnection( );
-	BYTE    GetPollRate( );
-	void __cdecl MessageLoop(void *);
-	void __cdecl UpdateLoop(void *);
-	void    KillThreads( );
+	bool    NegotiateConnection();
+	BYTE    GetPollRate();
+	void __cdecl MessageLoop(void*);
+	void __cdecl UpdateLoop(void*);
+	void    KillThreads(bool log=false);
 
 	// Processing threads
-	void __cdecl ProcessBuddyList( void* );
-	void __cdecl ProcessMessages( void* );
-	void __cdecl ProcessFeeds( void* );
+	void __cdecl ProcessBuddyList(void*);
+	void __cdecl ProcessMessages(void*);
+	void __cdecl ProcessFeeds(void*);
 	void         ProcessAvatar(HANDLE,const std::string*,bool force=false);
 
 	// Worker threads
-	void __cdecl SignOn(void *);
-  void __cdecl ChangeStatus(void *);
-	void __cdecl SignOff(void *);
-	void __cdecl GetAwayMsgWorker(void *);
-	void __cdecl SetAwayMsgWorker(void *);
-	void __cdecl UpdateContactWorker(void *);
-	void __cdecl UpdateAvatarWorker(void *);
-	void __cdecl SendMsgWorker(void *);
-	void __cdecl SendTypingWorker(void *); // TODO: Thread required?
-	void __cdecl CloseChatWorker(void *); // TODO: Thread required?
+	void __cdecl SignOn(void*);
+	void __cdecl ChangeStatus(void*);
+	void __cdecl SignOff(void*);
+	void __cdecl GetAwayMsgWorker(void*);
+	void __cdecl SetAwayMsgWorker(void*);
+	void __cdecl UpdateContactWorker(void*);
+	void __cdecl UpdateAvatarWorker(void*);
+	void __cdecl SendMsgWorker(void*);
+	void __cdecl SendTypingWorker(void*); // TODO: Thread required?
+	void __cdecl CloseChatWorker(void*); // TODO: Thread required?
 
 	// Contacts handling
 	bool    IsMyContact(HANDLE, bool include_chat = false);
@@ -164,9 +164,9 @@ public:
 	void    SetAllContactStatuses(int);
 	bool    ContactNeedsUpdate(facebook_user*);
 
-  // RM TODO: Chats handling
+	// RM TODO: Chats handling
  	/*void AddChat(const char *id,const char *name);
-  void UpdateChat(const facebook_user &update);
+	void UpdateChat(const facebook_user &update);
 	void AddChatContact(const char *name,const char *nick=0);
 	void DeleteChatContact(const char *name);
 	void SetChatStatus(int);*/

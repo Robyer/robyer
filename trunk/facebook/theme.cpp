@@ -41,7 +41,7 @@ static const icons[] =
 	{ "facebook", LPGEN("Facebook Icon"), IDI_FACEBOOK },
 	{ "mind",     LPGEN("Mind"),          IDI_MIND     },
 
-  { "homepage", LPGEN("Visit Profile"), 0, "core_main_2" }, 
+	{ "homepage", LPGEN("Visit Profile"), 0, "core_main_2" }, 
 };
 
 static HANDLE hIconLibItem[SIZEOF(icons)];
@@ -64,7 +64,7 @@ void InitIcons(void)
     sid.flags = SIDF_PATH_TCHAR;
 
 	for (int i=0; i<SIZEOF(icons); i++) 
-  {
+	{
 		if(icons[i].defIconID)
 		{
 			mir_snprintf(setting_name,sizeof(setting_name),"%s_%s","Facebook",icons[i].name);
@@ -81,9 +81,7 @@ void InitIcons(void)
 			sid.pszDescription = (char*)icons[i].descr;
 			sid.iDefaultIndex = -icons[i].defIconID;
 			hIconLibItem[i] = (HANDLE)CallService(MS_SKIN2_ADDICON,0,(LPARAM)&sid);
-    }
-    else
-    { // External icons
+		} else { // External icons
 			hIconLibItem[i] = (HANDLE)CallService(MS_SKIN2_GETICONHANDLE,0,
 				(LPARAM)icons[i].section);
 		}
@@ -144,7 +142,7 @@ void InitContactMenus()
 	mi.icolibItem = GetIconHandle("homepage");
 	mi.pszName = LPGEN("Visit Profile");
 	mi.pszService = "FacebookProto/VisitProfile";
-  CreateServiceFunction(mi.pszService,GlobalService<&FacebookProto::VisitProfile>);
+	CreateServiceFunction(mi.pszService,GlobalService<&FacebookProto::VisitProfile>);
 	g_hMenuItems[1] = reinterpret_cast<HANDLE>(
 		CallService(MS_CLIST_ADDCONTACTMENUITEM,0,(LPARAM)&mi) );
 }

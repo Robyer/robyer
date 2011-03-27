@@ -47,11 +47,11 @@ int FacebookProto::RecvMsg(HANDLE hContact, PROTORECVEVENT *pre)
 	DBVARIANT dbv;
 
 	if( !DBGetContactSettingString(hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv) )
-  {
+	{
 		std::string* data = new std::string( dbv.pszVal );
 		ForkThread( &FacebookProto::CloseChatWorker, this, (void*)data );
 		DBFreeVariant(&dbv);
-  }
+	}
 
 	CallService(MS_PROTO_CONTACTISTYPING, (WPARAM)hContact, (LPARAM)PROTOTYPE_CONTACTTYPING_OFF);
 
@@ -61,38 +61,38 @@ int FacebookProto::RecvMsg(HANDLE hContact, PROTORECVEVENT *pre)
 
 void FacebookProto::SendMsgWorker(void *p)
 {
-  if(p == NULL)
+	if(p == NULL)
 		return;
   
-  ScopedLock s( facy.send_message_lock_ );
+	ScopedLock s( facy.send_message_lock_ );
 
-  send_direct *data = static_cast<send_direct*>(p);
+	send_direct *data = static_cast<send_direct*>(p);
 
 	DBVARIANT dbv;
 
-  if ( !isOnline( ) )
-  {
-    ProtoBroadcastAck(m_szModuleName, data->hContact, ACKTYPE_MESSAGE, ACKRESULT_FAILED, data->msgid, (LPARAM)Translate("You cannot send messages when you are offline."));
-  }
-  else if ( DBGetContactSettingWord( data->hContact, m_szModuleName, "Status", ID_STATUS_OFFLINE ) == ID_STATUS_OFFLINE )
-  {
-    ProtoBroadcastAck(m_szModuleName, data->hContact, ACKTYPE_MESSAGE, ACKRESULT_FAILED, data->msgid, (LPARAM)Translate("Facebook protocol don't support offline messages."));
+	if ( !isOnline( ) )
+	{
+		ProtoBroadcastAck(m_szModuleName, data->hContact, ACKTYPE_MESSAGE, ACKRESULT_FAILED, data->msgid, (LPARAM)Translate("You cannot send messages when you are offline."));
+	}
+	else if ( DBGetContactSettingWord( data->hContact, m_szModuleName, "Status", ID_STATUS_OFFLINE ) == ID_STATUS_OFFLINE )
+	{
+		ProtoBroadcastAck(m_szModuleName, data->hContact, ACKTYPE_MESSAGE, ACKRESULT_FAILED, data->msgid, (LPARAM)Translate("Facebook protocol don't support offline messages."));
 
-    if( !DBGetContactSettingString(data->hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv) )
-    { // RM TODO: remove when New Messages      
-      std::string url = "http://www.facebook.com/n/?messages/";
-      url += dbv.pszVal;
-      TCHAR* szUrl = mir_a2t_cp(url.c_str(), CP_UTF8);    
-      NotifyEvent(m_tszUserName,TranslateT("Click here if you want to send message through Facebook website."),NULL,FACEBOOK_EVENT_CLIENT,szUrl);
-      DBFreeVariant(&dbv);
-    }
-  }
-  else if( !DBGetContactSettingString(data->hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv) )
-  {
-    if ( facy.send_message(dbv.pszVal, data->msg) )
-      ProtoBroadcastAck(m_szModuleName,data->hContact,ACKTYPE_MESSAGE,ACKRESULT_SUCCESS, data->msgid,0);
+		if( !DBGetContactSettingString(data->hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv) )
+		{ // RM TODO: remove when New Messages      
+			std::string url = "http://www.facebook.com/n/?messages/";
+			url += dbv.pszVal;
+			TCHAR* szUrl = mir_a2t_cp(url.c_str(), CP_UTF8);    
+			NotifyEvent(m_tszUserName,TranslateT("Click here if you want to send message through Facebook website."),NULL,FACEBOOK_EVENT_CLIENT,szUrl);
+			DBFreeVariant(&dbv);
+		}
+	}
+	else if( !DBGetContactSettingString(data->hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv) )
+	{
+		if ( facy.send_message(dbv.pszVal, data->msg) )
+			ProtoBroadcastAck(m_szModuleName,data->hContact,ACKTYPE_MESSAGE,ACKRESULT_SUCCESS, data->msgid,0);
 		else
-      ProtoBroadcastAck(m_szModuleName,data->hContact,ACKTYPE_MESSAGE,ACKRESULT_FAILED, data->msgid,(LPARAM)Translate("Error with sending message."));
+			ProtoBroadcastAck(m_szModuleName,data->hContact,ACKTYPE_MESSAGE,ACKRESULT_FAILED, data->msgid,(LPARAM)Translate("Error with sending message."));
 
 		std::string* data = new std::string( dbv.pszVal );
 		CloseChatWorker( (void*)data );
@@ -106,11 +106,11 @@ int FacebookProto::SendMsg(HANDLE hContact, int flags, const char *msg)
 {
 	// TODO: msg comes as Unicode (retyped wchar_t*), why should we convert it as ANSI to UTF-8? o_O
 	if ( flags & PREF_UNICODE )
-    msg = mir_utf8encode(msg);
+		msg = mir_utf8encode(msg);
   
-  facy.msgid_ = (facy.msgid_ % 1024)+1;
-  ForkThread( &FacebookProto::SendMsgWorker, this,new send_direct(hContact,msg,(HANDLE)facy.msgid_) );
-  return facy.msgid_;
+	facy.msgid_ = (facy.msgid_ % 1024)+1;
+	ForkThread( &FacebookProto::SendMsgWorker, this,new send_direct(hContact,msg,(HANDLE)facy.msgid_) );
+	return facy.msgid_;
 }
 
 int FacebookProto::UserIsTyping(HANDLE hContact,int type)
@@ -128,15 +128,15 @@ void FacebookProto::SendTypingWorker(void *p)
 
 	send_typing *typing = static_cast<send_typing*>(p);
 
-  // RM TODO: maybe better send typing optimalization
-  facy.is_typing_ = (typing->status == PROTOTYPE_SELFTYPING_ON);
-  SleepEx( 2000, true );
+	// RM TODO: maybe better send typing optimalization
+	facy.is_typing_ = (typing->status == PROTOTYPE_SELFTYPING_ON);
+	SleepEx( 2000, true );
 
-  if ( !facy.is_typing_ == (typing->status == PROTOTYPE_SELFTYPING_ON) )
-  {
-    delete typing;
-    return;
-  }
+	if ( !facy.is_typing_ == (typing->status == PROTOTYPE_SELFTYPING_ON) )
+	{
+		delete typing;
+		return;
+	}
 		
 	DBVARIANT dbv;
 	if( !DBGetContactSettingString(typing->hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv) )

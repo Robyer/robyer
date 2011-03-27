@@ -68,28 +68,28 @@ void ForkThread(void (__cdecl T::*thread)(void*),T *self,void *data = 0)
 namespace utils
 {
 	namespace url
-  {
+	{
 		std::string encode(const std::string &s);
 	};
 
 	namespace time
-  {
+	{
 		std::string unix_timestamp( );
 		std::string mili_timestamp( );
 	};
 
 	namespace number
-  {
+	{
 		int random( );
 	};
 
 	namespace text
-  {
+	{
 		void replace_first( std::string* data, std::string from, std::string to );
 		void replace_all( std::string* data, std::string from, std::string to );
 		unsigned int count_all( std::string* data, std::string term );
 		std::string special_expressions_decode( std::string data );
-    std::string edit_html( std::string data );
+		std::string edit_html( std::string data );
 		std::string remove_html( std::string data );
 		std::string slashu_to_utf8( std::string data );
 		std::string trim( std::string data );
@@ -97,18 +97,18 @@ namespace utils
 	};
 
 	namespace conversion
-  {
+	{
 		std::string to_string( void*, WORD type );
 	};
 
 	namespace debug
-  {
+	{
 		void info( const char* info, HWND parent = NULL );
 		int log(std::string file_name, std::string text);
 	};
 
 	namespace mem
-  {
+	{
 		void __fastcall detract(char** str );
 		void __fastcall detract(void** p);
 		void __fastcall detract(void* p);
@@ -128,7 +128,6 @@ public:
 		if(handle_)
 			ReleaseMutex(handle_);
 	}
-
 	void Unlock()
 	{
 		ReleaseMutex(handle_);

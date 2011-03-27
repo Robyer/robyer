@@ -30,16 +30,16 @@ Last change on : $Date: 2011-01-20 21:38:59 +0100 (čt, 20 1 2011) $
 void FacebookProto::ProcessBuddyList( void* data )
 {
 	if ( data == NULL )
-    return;
+		return;
 
-  ScopedLock s( facy.buddies_lock_ );
+	ScopedLock s( facy.buddies_lock_ );
 
-  std::string* resp = (std::string*)data;
+	std::string* resp = (std::string*)data;
 
 	if ( isOffline() )
 		goto exit;
 
-  LOG("***** Starting processing buddy list");
+	LOG("***** Starting processing buddy list");
 
 	CODE_BLOCK_TRY
 
@@ -54,17 +54,15 @@ void FacebookProto::ProcessBuddyList( void* data )
 		facebook_user* fu;
 
 		if ( i->data->status_id == ID_STATUS_OFFLINE )
-    {
+		{
 			fu = new facebook_user( i->data );
 			std::string to_delete( i->key );
 			i = i->next;
 			facy.buddies.erase( to_delete );
-    }
-    else
-    {
+		} else {
 			fu = i->data;
 			i = i->next;
-    }
+		}
 
 		ForkThread(&FacebookProto::UpdateContactWorker, this, (void*)fu);
 	}
@@ -83,14 +81,15 @@ exit:
 
 void FacebookProto::ProcessMessages( void* data )
 {
-	if ( data == NULL ) return;
+	if ( data == NULL )
+		return;
 
 	std::string* resp = (std::string*)data;
 
 	if ( isOffline() )
 		goto exit;
 
-  LOG("***** Starting processing messages");
+	LOG("***** Starting processing messages");
 
 	CODE_BLOCK_TRY
 
@@ -104,7 +103,7 @@ void FacebookProto::ProcessMessages( void* data )
 	for(std::vector<facebook_message*>::size_type i=0; i<messages.size( ); i++)
 	{
 		if ( messages[i]->user_id != facy.self_.user_id )
-    {
+		{
 			LOG("      Got message: %s", messages[i]->message_text.c_str());
 			facebook_user fbu;
 			fbu.user_id = messages[i]->user_id;
@@ -129,12 +128,12 @@ void FacebookProto::ProcessMessages( void* data )
 	}
 	messages.clear();
 
-  // RM TODO: needed if notify?
+	// RM TODO: needed if notify?
 	BYTE notify = getByte( FACEBOOK_KEY_EVENT_NOTIFICATIONS_ENABLE, DEFAULT_EVENT_NOTIFICATIONS_ENABLE );
 	for(std::vector<facebook_notification*>::size_type i=0; i<notifications.size( ); i++)
 	{
 		if ( notify )
-    {
+		{
 			LOG("      Got notification: %s", notifications[i]->text.c_str());
 			TCHAR* szTitle = mir_a2t_cp(this->m_szModuleName, CP_UTF8);
 			TCHAR* szText = mir_a2t_cp(notifications[i]->text.c_str(), CP_UTF8);
@@ -163,7 +162,7 @@ exit:
 void FacebookProto::ProcessFeeds( void* data )
 {
 	if ( data == NULL )
-    return;
+		return;
 
 	std::string* resp = (std::string*)data;
 
@@ -179,49 +178,51 @@ void FacebookProto::ProcessFeeds( void* data )
 	std::string::size_type pos = 0;
 	UINT limit = 0;
 
-  *resp = utils::text::slashu_to_utf8(*resp);
+	*resp = utils::text::slashu_to_utf8(*resp);
 
 	while ( ( pos = resp->find( "<h6", pos ) ) != std::string::npos && limit <= 25 )
 	{
 		std::string::size_type pos2 = resp->find( "<form", pos );
-    if (pos2 == std::string::npos)
-      pos2 = resp->find( "<\\/h6" );
+		if (pos2 == std::string::npos)
+			pos2 = resp->find( "<\\/h6" );
 
-    std::string post_content = resp->substr( pos, pos2 - pos );
+		std::string post_content = resp->substr( pos, pos2 - pos );
 		std::string rest_content = resp->substr( resp->find( "class=\\\"uiStreamSource\\\"", pos ) , resp->find( "<abbr title=", pos ) - pos );
 
-    pos += 4;
+		pos += 4;
 		facebook_newsfeed* nf = new facebook_newsfeed;
 
 		nf->title = utils::text::source_get_value( &post_content, 3, "<a ", "\\\">", "<\\/a" );
 		nf->user_id = utils::text::source_get_value( &post_content, 2, "user.php?id=", "\\\"" );
 		
-    pos2 = post_content.find( "<\\/a>" );
-    nf->text = post_content.substr( pos2, post_content.length() - pos2 );
-    //nf->text = utils::text::source_get_value( &post_content, 2, "<\\/a>",/*<span class=\\\"messageBody\\\">", *//*"<\\/h6"*/ "<form" );
+		pos2 = post_content.find( "<\\/a>" );
+		nf->text = post_content.substr( pos2, post_content.length() - pos2 );
+		//nf->text = utils::text::source_get_value( &post_content, 2, "<\\/a>",/*<span class=\\\"messageBody\\\">", *//*"<\\/h6"*/ "<form" );
 
 		nf->link = utils::text::source_get_value( &rest_content, 2, "href=\\\"", "\\\">" );
 
 		nf->title = utils::text::trim(
-        utils::text::special_expressions_decode(
-            utils::text::remove_html( nf->title ) ) ) ;
+			utils::text::special_expressions_decode(
+				utils::text::remove_html( nf->title ) ) );
+		
 		nf->text = utils::text::trim(
-        utils::text::special_expressions_decode(
-            utils::text::remove_html(
-              utils::text::edit_html( nf->text ) ) ) ) ;
+			utils::text::special_expressions_decode(
+				utils::text::remove_html(
+					utils::text::edit_html( nf->text ) ) ) );
+		
 		nf->link = utils::text::special_expressions_decode( nf->link );
 
 		if ( !nf->title.length() || !nf->text.length() )
-    {
+		{
 			delete nf;
 			continue;
-    }
+		}
 
 		if (nf->text.length() > 500)
-    {
-      nf->text = nf->text.substr(0, 500);
-      nf->text += "...";
-    }
+		{
+			nf->text = nf->text.substr(0, 500);
+			nf->text += "...";
+		}
 
 		news.push_back( nf );
 		pos++;
