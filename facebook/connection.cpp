@@ -124,33 +124,45 @@ bool FacebookProto::NegotiateConnection( )
 	LOG("***** Negotiating connection with Facebook");
 
 	int old_status = m_iStatus;
+	bool error;
 	std::string user, pass;
 	DBVARIANT dbv = {0};
 
+	error = true;
 	if ( !DBGetContactSettingString(NULL,m_szModuleName,FACEBOOK_KEY_LOGIN,&dbv) )
 	{
 		user = dbv.pszVal;
 		DBFreeVariant(&dbv);
-	} else {
+		if ( !user.empty() )
+			error = false;
+	}
+	if (error)
+	{
 		NotifyEvent(m_tszUserName,TranslateT("Please enter a username."),NULL,FACEBOOK_EVENT_CLIENT);
 		goto error;
 	}
 
-	if ( !DBGetContactSettingString(NULL,m_szModuleName,FACEBOOK_KEY_DEVICE_ID,&dbv) )
-	{
-		facy.cookies["datr"] = dbv.pszVal;
-		DBFreeVariant(&dbv);
-	}
-
+	error = true;
 	if ( !DBGetContactSettingString(NULL,m_szModuleName,FACEBOOK_KEY_PASS,&dbv) )
 	{
 		CallService(MS_DB_CRYPT_DECODESTRING,strlen(dbv.pszVal)+1,
 			reinterpret_cast<LPARAM>(dbv.pszVal));
 		pass = dbv.pszVal;
 		DBFreeVariant(&dbv);
-	} else {
+		if ( !pass.empty() )
+			error = false;
+	}
+	if (error)
+	{
 		NotifyEvent(m_tszUserName,TranslateT("Please enter a password."),NULL,FACEBOOK_EVENT_CLIENT);
 		goto error;
+	}
+
+	// Load machine name
+	if ( !DBGetContactSettingString(NULL,m_szModuleName,FACEBOOK_KEY_DEVICE_ID,&dbv) )
+	{
+		facy.cookies["datr"] = dbv.pszVal;
+		DBFreeVariant(&dbv);
 	}
 
 	bool success;
@@ -191,7 +203,7 @@ void FacebookProto::UpdateLoop(void *)
 {
 	//ScopedLock s(update_loop_lock_); // TODO: Required?
 	time_t tim = ::time(NULL);
-	LOG( ">>>>> Entering Facebook::UpdateLoop [%d]", tim );
+	LOG( ">>>>> Entering Facebook::UpdateLoop[%d]", tim );
 
 	for ( DWORD i = 0; ; i = ++i % 48 )
 	{
@@ -214,13 +226,13 @@ void FacebookProto::UpdateLoop(void *)
 		/*if ( !facy.invisible_ )
         if ( !facy.keep_alive( ) )
 				  break;*/
-		LOG( "***** FacebookProto::UpdateLoop [%d] going to sleep...", tim );
+		LOG( "***** FacebookProto::UpdateLoop[%d] going to sleep...", tim );
 		if ( SleepEx( GetPollRate( ) * 1000, true ) == WAIT_IO_COMPLETION )
 			break;
-		LOG( "***** FacebookProto::UpdateLoop [%d] waking up...", tim );
+		LOG( "***** FacebookProto::UpdateLoop[%d] waking up...", tim );
 	}
 
-	LOG( "<<<<< Exiting FacebookProto::UpdateLoop [%d]", tim );
+	LOG( "<<<<< Exiting FacebookProto::UpdateLoop[%d]", tim );
 }
 
 void FacebookProto::MessageLoop(void *)
