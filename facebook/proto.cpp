@@ -328,9 +328,10 @@ int FacebookProto::SvcCreateAccMgrUI(WPARAM wParam,LPARAM lParam)
 		 (HWND)lParam, FBAccountProc, (LPARAM)this );
 }
 
-/* // RM TODO: group chats
 int FacebookProto::OnModulesLoaded(WPARAM wParam,LPARAM lParam)
 {
+/*
+	// RM TODO: group chats
 	// Register group chat
 	GCREGISTER gcr = {sizeof(gcr)};
 	gcr.dwFlags = GC_ACKMSG;
@@ -338,9 +339,9 @@ int FacebookProto::OnModulesLoaded(WPARAM wParam,LPARAM lParam)
 	gcr.pszModuleDispName = m_szModuleName;
 	gcr.iMaxText = FACEBOOK_MESSAGE_LIMIT;
 	CallService(MS_GC_REGISTER,0,reinterpret_cast<LPARAM>(&gcr));
-  
+*/
 	return 0;
-}*/
+}
 
 int FacebookProto::OnPreShutdown(WPARAM wParam,LPARAM lParam)
 {
