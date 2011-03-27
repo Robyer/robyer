@@ -180,14 +180,18 @@ void FacebookProto::ProcessFeeds( void* data )
 
 	*resp = utils::text::slashu_to_utf8(*resp);
 
+	// RM TODO: first parse against <li>...</li>?
 	while ( ( pos = resp->find( "<h6", pos ) ) != std::string::npos && limit <= 25 )
 	{
-		std::string::size_type pos2 = resp->find( "<form", pos );
+		std::string::size_type pos2 = resp->find( "<abbr title", pos );
 		if (pos2 == std::string::npos)
-			pos2 = resp->find( "<\\/h6" );
+			pos2 = resp->find( "<\\/h6", pos );
 
 		std::string post_content = resp->substr( pos, pos2 - pos );
-		std::string rest_content = resp->substr( resp->find( "class=\\\"uiStreamSource\\\"", pos ) , resp->find( "<abbr title=", pos ) - pos );
+		std::string rest_content;
+
+		if ( (pos2 = resp->find( "class=\\\"uiStreamSource\\\"" ), pos) != std::string::npos )
+			rest_content = resp->substr( pos2, resp->find( "<abbr title=", pos2 ) - pos2 );
 
 		pos += 4;
 		facebook_newsfeed* nf = new facebook_newsfeed;
@@ -195,8 +199,8 @@ void FacebookProto::ProcessFeeds( void* data )
 		nf->title = utils::text::source_get_value( &post_content, 3, "<a ", "\\\">", "<\\/a" );
 		nf->user_id = utils::text::source_get_value( &post_content, 2, "user.php?id=", "\\\"" );
 		
-		pos2 = post_content.find( "<\\/a>" );
-		nf->text = post_content.substr( pos2, post_content.length() - pos2 );
+		if ( (pos2 = post_content.find( "<\\/a>" )) != std::string::npos )
+			nf->text = post_content.substr( pos2, post_content.length() - pos2 );
 		//nf->text = utils::text::source_get_value( &post_content, 2, "<\\/a>",/*<span class=\\\"messageBody\\\">", *//*"<\\/h6"*/ "<form" );
 
 		nf->link = utils::text::source_get_value( &rest_content, 2, "href=\\\"", "\\\">" );
