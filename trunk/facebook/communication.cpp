@@ -586,21 +586,32 @@ bool facebook_client::login(const std::string &username,const std::string &passw
 	// Process result data
 	validate_response(&resp);
 
-	// Check if facebook requires https, but we have disabled it
-	if ( !DBGetContactSettingByte( NULL, parent->m_szProtoName, FACEBOOK_KEY_FORCE_HTTPS, 0 ) )
-	{    
-		if ( resp.headers.find("Location") != resp.headers.end() && resp.headers["Location"].find("https://") != std::string::npos )
-		{
-			client_notify(TranslateT("Your account requires https connection. Activating..."));
-			DBWriteContactSettingByte( NULL, parent->m_szProtoName, FACEBOOK_KEY_FORCE_HTTPS, 1 );
-		}
-	}
-
-	// Check whether setting Machine name is required
-	if ( resp.code == HTTP_CODE_FOUND && resp.headers.find("Location") != resp.headers.end() && resp.headers["Location"].find("loginnotify/setup_machine.php") != std::string::npos )
+	if ( resp.code == HTTP_CODE_FOUND && resp.headers.find("Location") != resp.headers.end() )
 	{
-		std::string inner_data = "charset_test=%e2%82%ac%2c%c2%b4%2c%e2%82%ac%2c%c2%b4%2c%e6%b0%b4%2c%d0%94%2c%d0%84&locale=en&machinename=MirandaIM&remembercomputer=1";
-		flap( FACEBOOK_REQUEST_SETUP_MACHINE, &inner_data );
+		// Check whether HTTPS connection is required and we don't have enabled it
+		if ( !DBGetContactSettingByte( NULL, parent->m_szProtoName, FACEBOOK_KEY_FORCE_HTTPS, 0 ) )
+		{    
+			if ( resp.headers["Location"].find("https://") != std::string::npos )
+			{
+				client_notify(TranslateT("Your account requires HTTPS connection. Activating."));
+				DBWriteContactSettingByte( NULL, parent->m_szProtoName, FACEBOOK_KEY_FORCE_HTTPS, 1 );
+			}
+		}
+
+		// Check whether captcha is required
+		if ( resp.headers["Location"].find("help.php") != std::string::npos )
+		{
+			client_notify( TranslateT("Login error: Captcha code is required. Bad login credentials?") );
+			parent->Log(" ! !  Login error: Captcha code is required.");
+			return handle_error( "login", FORCE_DISCONNECT );
+		}
+		
+		// Check whether setting Machine name is required
+		if ( resp.headers["Location"].find("loginnotify/setup_machine.php") != std::string::npos )
+		{
+			std::string inner_data = "charset_test=%e2%82%ac%2c%c2%b4%2c%e2%82%ac%2c%c2%b4%2c%e6%b0%b4%2c%d0%94%2c%d0%84&locale=en&machinename=MirandaIM&remembercomputer=1";
+			flap( FACEBOOK_REQUEST_SETUP_MACHINE, &inner_data );
+		}
 	}
 
 	// Check for Device ID
@@ -609,14 +620,31 @@ bool facebook_client::login(const std::string &username,const std::string &passw
 
 	switch ( resp.code )
 	{
+	case HTTP_CODE_FAKE_DISCONNECTED:
+	{
+		// When is error only because timeout, try login once more
+		if ( handle_error( "login" ) )
+			return login(username, password);
+		else
+			return false;
+	}
+
 	case HTTP_CODE_OK: // OK page returned, but that is regular login page we don't want in fact
 	{ 
+		// Check whether captcha code is required
+		if ( resp.data.find("id=\"captcha\"") != std::string::npos )
+		{
+			client_notify( TranslateT("Login error: Captcha code is required. Bad login credentials?") );
+			parent->Log(" ! !  Login error: Captcha code is required.");
+			return handle_error( "login", FORCE_DISCONNECT );
+		}
+		
 		// Get error message
 		std::string error_str = utils::text::trim(
-        utils::text::special_expressions_decode(
-			utils::text::remove_html( 
-				utils::text::edit_html(
-					utils::text::source_get_value( &resp.data, 2, "id=\"standard_error\">", "</h2>" ) ) ) ) );
+			utils::text::special_expressions_decode(
+				utils::text::remove_html( 
+					utils::text::edit_html(
+						utils::text::source_get_value( &resp.data, 2, "id=\"standard_error\">", "</h2>" ) ) ) ) );
 
 		if ( !error_str.length() )
 			error_str = Translate("Unknown login error");
@@ -645,10 +673,9 @@ bool facebook_client::login(const std::string &username,const std::string &passw
 			DBWriteContactSettingString(NULL,parent->m_szModuleName,FACEBOOK_KEY_ID,this->self_.user_id.c_str());
 			parent->Log("      Got self user id: %s", this->self_.user_id.c_str());
 			return handle_success( "login" );
-		}
-		else
-		{
+		} else {
 			client_notify(TranslateT("Login error, probably bad login credentials."));
+			parent->Log(" ! !  Login error, probably bad login credentials.");
 			return handle_error( "login", FORCE_DISCONNECT );
 		}
 	}
@@ -964,16 +991,16 @@ bool facebook_client::channel( )
 	{
 		// Something went wrong (server flooding?)
 
-    parent->Log("___need fullreload___");
+		parent->Log("___need fullreload___");
     
-    this->chat_sequence_num_ = utils::text::source_get_value( &resp.data, 2, "\"seq\":", "," );
+		this->chat_sequence_num_ = utils::text::source_get_value( &resp.data, 2, "\"seq\":", "," );
 		parent->Log("      Got self sequence number: %s", this->chat_sequence_num_.c_str());
 
-    this->chat_reconnect_reason_ = utils::text::source_get_value( &resp.data, 2, "\"reason\":", "}" );
+		this->chat_reconnect_reason_ = utils::text::source_get_value( &resp.data, 2, "\"reason\":", "}" );
 		parent->Log("      Reconnect reason: %s", this->chat_reconnect_reason_.c_str());
 
-    client_notify(TranslateT("Required channel refresh, maybe we didn't received all messages.\nYou should check Facebook website to be sure."));
-    // RM TODO: reconnect isnt needed
+		client_notify(TranslateT("Required channel refresh, maybe we didn't received all messages.\nYou should check Facebook website to be sure."));
+		// RM TODO: reconnect isnt needed
 		// return this->reconnect( );
 	}
 	else if ( resp.data.find( "\"t\":\"refresh\"" ) != std::string::npos )
