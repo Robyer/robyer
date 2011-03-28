@@ -94,8 +94,7 @@ int facebook_json_parser::parse_buddy_list( void* data, List::List< facebook_use
 
 			current->real_name = utils::text::slashu_to_utf8(
 			    utils::text::special_expressions_decode( realName.Value( ) ) );
-			current->image_url = FACEBOOK_DEFAULT_AVATAR_URL;
-			current->thumb_url = utils::text::slashu_to_utf8(
+			current->image_url = utils::text::slashu_to_utf8(
 			    utils::text::special_expressions_decode( imageUrl.Value( ) ) );
 		}
 	}

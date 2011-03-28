@@ -162,7 +162,7 @@ public:
 
 	// User details handling
 
-	bool    get_profile(facebook_user* fbu);
+	//bool    get_profile(facebook_user* fbu);
 
 	////////////////////////////////////////////////////////////
 

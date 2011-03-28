@@ -41,6 +41,8 @@ void FacebookProto::UpdateAvatarWorker(void *p)
 		std::string ext = new_url.substr(new_url.rfind('.'));
 		if ( new_url == FACEBOOK_DEFAULT_AVATAR_URL )
 			new_url = new_url.replace( new_url.rfind( "/q" ), 2, "/d" );
+		else
+			new_url = new_url.replace( new_url.rfind( "_q." ), 3, "_s." );
 		std::string filename = GetAvatarFolder() + '\\' + dbv.pszVal + ext;
 		DBFreeVariant(&dbv);
 
