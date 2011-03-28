@@ -750,6 +750,12 @@ bool facebook_client::home( )
 			this->logout_hash_ = utils::text::source_get_value( &resp.data, 2, "<input type=\"hidden\" autocomplete=\"off\" name=\"h\" value=\"", "\"" );
 			parent->Log("      Got self logout hash: %s", this->logout_hash_.c_str());
 
+			// Get avatar
+			this->self_.image_url = utils::text::trim(
+				utils::text::special_expressions_decode(
+					utils::text::source_get_value( &resp.data, 3, "class=\\\"fbxWelcomeBoxBlock", "class=\\\"img\\\" src=\\\"", "\\\"" ) ) );
+			parent->Log("      Got self avatar: %s", this->self_.image_url.c_str());
+
 			// Get friend requests count and messages count and notify it
 			if ( DBGetContactSettingByte( NULL, parent->m_szModuleName, FACEBOOK_KEY_EVENT_OTHER_ENABLE, DEFAULT_EVENT_OTHER_ENABLE ) )
 			{
@@ -1129,7 +1135,7 @@ void facebook_client::close_chat( std::string message_recipient )
 	http::response resp = flap( FACEBOOK_REQUEST_SETTINGS, &data );
 }
 
-bool facebook_client::get_profile(facebook_user* fbu)
+/*bool facebook_client::get_profile(facebook_user* fbu)
 {
 	handle_entry( "get_profile" );
 
@@ -1159,7 +1165,7 @@ bool facebook_client::get_profile(facebook_user* fbu)
 	default:
   		return handle_error( "get_profile" );
 	}
-}
+}*/
 
 bool facebook_client::set_status(const std::string &status_text)
 {

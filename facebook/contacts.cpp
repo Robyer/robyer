@@ -169,50 +169,25 @@ void FacebookProto::UpdateContactWorker(void *p)
 			DBVARIANT dbv;
 			
 			// Update Real name
+			update_required = true;
 			if ( !DBGetContactSettingUTF8String(fbu->handle,m_szModuleName,FACEBOOK_KEY_NAME,&dbv) )
 			{
 				update_required = strcmp( dbv.pszVal, fbu->real_name.c_str() ) != 0;
 				DBFreeVariant(&dbv);
-			} else {
-				update_required = true;
 			}
-
 			if ( update_required )
 			{
 				DBWriteContactSettingUTF8String(fbu->handle,m_szModuleName,FACEBOOK_KEY_NAME,fbu->real_name.c_str());
 				DBWriteContactSettingUTF8String(fbu->handle,m_szModuleName,"Nick",fbu->real_name.c_str());
-				update_required = false;
 			}
 
-			// Check thumbnail avatar for regular contacts
-			if ( fbu->user_id != facy.self_.user_id )
+			// Check avatar change
+			update_required = true;
+			if ( !DBGetContactSettingString(fbu->handle,m_szModuleName,FACEBOOK_KEY_AV_URL,&dbv) )
 			{
-				if ( !DBGetContactSettingString(fbu->handle,m_szModuleName,FACEBOOK_KEY_AV_THUMB_URL,&dbv) )
-				{
-					update_required = strcmp( dbv.pszVal, fbu->thumb_url.c_str() ) != 0;
-					DBFreeVariant(&dbv);
-				} else {
-					update_required = true;
-				}
-
-				if ( update_required )
-					DBWriteContactSettingString(fbu->handle,m_szModuleName,FACEBOOK_KEY_AV_THUMB_URL,fbu->thumb_url.c_str());
+				update_required = strcmp( dbv.pszVal, fbu->image_url.c_str() ) != 0;
+				DBFreeVariant(&dbv);
 			}
-
-			// If changed thumbnail or it is self contact, check avatar
-			if ( update_required || fbu->user_id == facy.self_.user_id )
-			{
-				facy.get_profile( fbu );
-
-				if ( !DBGetContactSettingString(fbu->handle,m_szModuleName,FACEBOOK_KEY_AV_URL,&dbv) )
-				{
-					update_required = strcmp( dbv.pszVal, fbu->image_url.c_str() ) != 0;
-					DBFreeVariant(&dbv);
-				} else {
-					update_required = true;
-				}
-			}
-
 			if ( update_required || !AvatarExists(fbu->user_id) )
 			{
 				DBWriteContactSettingString(fbu->handle,m_szModuleName,FACEBOOK_KEY_AV_URL,fbu->image_url.c_str());
@@ -234,7 +209,7 @@ exit:
 
 void FacebookProto::GetAwayMsgWorker(void *hContact)
 {
-	if(hContact == 0)
+/*	if(hContact == 0)
     return;
 
 	DBVARIANT dbv;
@@ -246,7 +221,7 @@ void FacebookProto::GetAwayMsgWorker(void *hContact)
 	} else {
 		ProtoBroadcastAck(m_szModuleName,hContact,ACKTYPE_AWAYMSG,ACKRESULT_FAILED,
 			(HANDLE)1,(LPARAM)0);
-	}
+	}*/
 }
 
 HANDLE FacebookProto::GetAwayMsg(HANDLE hContact)
