@@ -139,7 +139,7 @@ void FacebookProto::UpdateContactWorker(void *p)
 	if ( this->isOffline( ) )
 		goto exit;
 
-	LOG("***** Updating contact: %s",fbu->real_name);
+	LOG("***** Updating contact: %s",fbu->real_name.c_str());
 
 	if ( fbu->status_id == ID_STATUS_OFFLINE )
 	{

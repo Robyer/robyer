@@ -29,6 +29,7 @@ Last change on : $Date: 2011-01-25 20:50:51 +0100 (út, 25 1 2011) $
 
 FacebookProto::FacebookProto(const char* proto_name,const TCHAR* username)
 {
+	m_iVersion = 2;
 	m_szProtoName  = mir_strdup( proto_name );
 	m_szModuleName = mir_strdup( proto_name );
 	m_tszUserName  = mir_tstrdup( username );
@@ -36,11 +37,12 @@ FacebookProto::FacebookProto(const char* proto_name,const TCHAR* username)
 	this->facy.parent = this;
 	this->facy.last_feeds_update_ = getDword( "LastNotificationsUpdate", 0 ); // RM TODO: is it useful?
 
-	this->signon_lock_ = CreateMutex( NULL, FALSE, TEXT("signon_lock_") );
-	this->avatar_lock_ = CreateMutex( NULL, FALSE, TEXT("avatar_lock_") );
-	this->log_lock_ = CreateMutex( NULL, FALSE, TEXT("log_lock_") );
-	this->facy.buddies_lock_ = CreateMutex( NULL, FALSE, TEXT("facy.buddies_lock_") );
-	this->facy.send_message_lock_ = CreateMutex( NULL, FALSE, TEXT("facy.send_message_lock_") );
+	this->signon_lock_ = CreateMutex( NULL, FALSE, NULL );
+	this->avatar_lock_ = CreateMutex( NULL, FALSE, NULL );
+	this->log_lock_ = CreateMutex( NULL, FALSE, NULL );
+	this->facy.buddies_lock_ = CreateMutex( NULL, FALSE, NULL );
+	this->facy.send_message_lock_ = CreateMutex( NULL, FALSE, NULL );
+	this->facy.fcb_conn_lock_ = CreateMutex( NULL, FALSE, NULL );
 
 	CreateProtoService(m_szModuleName, PS_CREATEACCMGRUI, &FacebookProto::SvcCreateAccMgrUI, this);
 	CreateProtoService(m_szModuleName, PS_GETNAME,        &FacebookProto::GetName,           this);
@@ -111,6 +113,7 @@ FacebookProto::~FacebookProto( )
 	CloseHandle( this->log_lock_ );
 	CloseHandle( this->facy.buddies_lock_ );
 	CloseHandle( this->facy.send_message_lock_ );
+	CloseHandle( this->facy.fcb_conn_lock_ );
 	CloseHandle( this->update_loop_lock_ );
 	CloseHandle( this->message_loop_lock_ );
 
@@ -274,9 +277,7 @@ int FacebookProto::SetAwayMsg( int status, const PROTOCHAR *msg )
 {
 	if ( isOnline() && msg != NULL && getByte( FACEBOOK_KEY_SET_MIRANDA_STATUS, DEFAULT_SET_MIRANDA_STATUS ) )
 	{
-		TCHAR *wide  = mir_a2t((const char*)msg); // TODO: Why?
-		char *narrow = mir_t2a_cp((const TCHAR*)wide,CP_UTF8);
-		utils::mem::detract((void**)&wide);
+		char *narrow = mir_utf8encodeT(msg);
 		ForkThread(&FacebookProto::SetAwayMsgWorker, this, narrow);
 	}
 	return 0;
