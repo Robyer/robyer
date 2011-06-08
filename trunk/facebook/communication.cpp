@@ -213,6 +213,7 @@ DWORD facebook_client::choose_security_level( int request_type )
 //	case FACEBOOK_REQUEST_MESSAGES_RECEIVE:
 //	case FACEBOOK_REQUEST_SETTINGS:
 //	case FACEBOOK_REQUEST_TABS:
+//	case FACEBOOK_REQUEST_ASYNC:
 //	case FACEBOOK_REQUEST_TYPING_SEND:
 	default:
 		return ( DWORD )0;
@@ -231,6 +232,7 @@ int facebook_client::choose_method( int request_type )
 	case FACEBOOK_REQUEST_MESSAGE_SEND:
 	case FACEBOOK_REQUEST_SETTINGS:
 	case FACEBOOK_REQUEST_TABS:
+	case FACEBOOK_REQUEST_ASYNC:
 	case FACEBOOK_REQUEST_TYPING_SEND:
 	case FACEBOOK_REQUEST_LOGOUT:
 		return REQUEST_POST;
@@ -267,6 +269,7 @@ std::string facebook_client::choose_proto( int request_type )
 //	case FACEBOOK_REQUEST_MESSAGES_RECEIVE:
 //	case FACEBOOK_REQUEST_SETTINGS:
 //	case FACEBOOK_REQUEST_TABS:
+//	case FACEBOOK_REQUEST_ASYNC:
 //	case FACEBOOK_REQUEST_TYPING_SEND:
 	default:
 		return HTTP_PROTO_REGULAR;
@@ -310,6 +313,7 @@ std::string facebook_client::choose_server( int request_type, std::string* data 
 //	case FACEBOOK_REQUEST_MESSAGE_SEND:
 //	case FACEBOOK_REQUEST_SETTINGS:
 //	case FACEBOOK_REQUEST_TABS:
+//	case FACEBOOK_REQUEST_ASYNC:
 //	case FACEBOOK_REQUEST_TYPING_SEND:
 	default:
 		return FACEBOOK_SERVER_REGULAR;
@@ -412,6 +416,9 @@ std::string facebook_client::choose_action( int request_type, std::string* data 
 	case FACEBOOK_REQUEST_TABS:
 		return "/ajax/chat/tabs.php?__a=1";
 
+	case FACEBOOK_REQUEST_ASYNC:
+		return "/ajax/messaging/async.php?__a=1";
+
 	case FACEBOOK_REQUEST_TYPING_SEND:
 		return "/ajax/messaging/typ.php?__a=1";
 
@@ -442,6 +449,7 @@ NETLIBHTTPHEADER* facebook_client::get_request_headers( int request_type, int* h
 	case FACEBOOK_REQUEST_MESSAGE_SEND:
 	case FACEBOOK_REQUEST_SETTINGS:
 	case FACEBOOK_REQUEST_TABS:
+	case FACEBOOK_REQUEST_ASYNC:
 	case FACEBOOK_REQUEST_TYPING_SEND:
 		*headers_count = 5;
 		break;
@@ -473,6 +481,7 @@ NETLIBHTTPHEADER* facebook_client::get_request_headers( int request_type, int* h
 	case FACEBOOK_REQUEST_MESSAGE_SEND:
 	case FACEBOOK_REQUEST_SETTINGS:
 	case FACEBOOK_REQUEST_TABS:
+	case FACEBOOK_REQUEST_ASYNC:
 	case FACEBOOK_REQUEST_TYPING_SEND:
 		set_header( &headers[4], "Content-Type" );
 
@@ -572,7 +581,7 @@ void facebook_client::store_headers( http::response* resp, NETLIBHTTPHEADER* hea
 		}
 		else
 		{ // RM TODO: (un)comment
-			//parent->Log("----- Got header '%s': %s", header_name.c_str(), header_value.c_str() );
+			parent->Log("----- Got header '%s': %s", header_name.c_str(), header_value.c_str() );
 			resp->headers[header_name] = header_value;
 		}
 	}
@@ -1043,7 +1052,7 @@ bool facebook_client::channel( )
 		this->chat_reconnect_reason_ = utils::text::source_get_value( &resp.data, 2, "\"reason\":", "}" );
 		parent->Log("      Reconnect reason: %s", this->chat_reconnect_reason_.c_str());
 
-		client_notify(TranslateT("Required channel refresh, maybe we didn't received all messages.\nYou should check Facebook website to be sure."));
+//		client_notify(TranslateT("Required channel refresh, maybe we didn't received all messages.\nYou should check Facebook website to be sure."));
 		// RM TODO: reconnect isnt needed
 		// return this->reconnect( );
 	}
@@ -1055,7 +1064,7 @@ bool facebook_client::channel( )
 		this->chat_reconnect_reason_ = utils::text::source_get_value( &resp.data, 2, "\"reason\":", "}" );
 		parent->Log("      Reconnect reason: %s", this->chat_reconnect_reason_.c_str());
 
-		client_notify(TranslateT("Required channel refresh, maybe we didn't received all messages.\nYou should check Facebook website to be sure."));
+//		client_notify(TranslateT("Required channel refresh, maybe we didn't received all messages.\nYou should check Facebook website to be sure."));
 		return this->reconnect( );
 	} else {
 		// Something has been received, throw to new thread to process
@@ -1163,8 +1172,11 @@ void facebook_client::close_chat( std::string message_recipient )
 	// add items to list and then checking every x seconds
 /*	if ( (::time(NULL) - parent->facy.last_close_chat_time_) < 8 )
 		return;*/
+	// parent->facy.last_close_chat_time_ = ::time(NULL);
 
-	parent->facy.last_close_chat_time_ = ::time(NULL);
+	/* Wait some time before close window, because sometimes facebook
+		can't close it so soon. But maybe this didnt help also. */
+	Sleep(300); 
 
 	std::string data = "close_chat=";
 	data += message_recipient;
@@ -1176,6 +1188,21 @@ void facebook_client::close_chat( std::string message_recipient )
 	data += ( this->dtsg_.length( ) ) ? this->dtsg_ : "0";
 	
 	http::response resp = flap( FACEBOOK_REQUEST_TABS, &data );
+}
+
+void facebook_client::chat_mark_read( std::string message_recipient )
+{
+	// RM TODO: optimalization?
+
+	std::string data = "action=chatMarkRead&other_user=";
+	data += message_recipient;
+	data += "&post_form_id=";
+	data += ( post_form_id_.length( ) ) ? post_form_id_ : "0";
+	data += "&fb_dtsg=";
+	data += ( this->dtsg_.length( ) ) ? this->dtsg_ : "0";
+	data += "&post_form_id_source=AsyncRequest&lsd=";
+	
+	http::response resp = flap( FACEBOOK_REQUEST_ASYNC, &data );
 }
 
 /*bool facebook_client::get_profile(facebook_user* fbu)
