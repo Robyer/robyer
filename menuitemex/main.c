@@ -29,6 +29,7 @@ BOOL bMetaContacts, bMir_08;
 PROTOACCOUNT **accs;
 OPENOPTIONSDIALOG ood;
 int protoCount;
+int hLangpack;
 static LONG_PTR OldAuthReqEditProc;
 
 struct {
@@ -1085,9 +1086,9 @@ int BuildMenu(WPARAM wparam,LPARAM lparam)
 
 	// update contact info
   
-	{ // TESTING: updating user's details
-		CallContactService((HANDLE)wparam, PSS_GETINFO, 0, 0);
-	}
+	//{ // TESTING: updating user's details
+	//	CallContactService((HANDLE)wparam, PSS_GETINFO, 0, 0);
+	//}
 
 	return 0;
 }
@@ -1170,30 +1171,45 @@ static int ContactWindowOpen(WPARAM wparam,LPARAM lParam)
    return 0; 
 }
 
-
-static int cmiex_ContactSettingChanged( WPARAM wParam, LPARAM lParam )
+static int ContactSettingChanged( WPARAM wParam, LPARAM lParam )
 { // NSN
   DBCONTACTWRITESETTING *cws = ( DBCONTACTWRITESETTING* )lParam;
-	WORD newStatus = 0, oldStatus = 0;
-	DWORD dwStatuses = 0;
+  WORD newStatus = 0, oldStatus = 0;
+  DWORD dwStatuses = 0;
+  time_t tCurrentTime;
+  char *lpzProto;
 
-  if( ( HANDLE )wParam == NULL || lstrcmpA( cws->szSetting, "Status" ) )
+  if ( ( HANDLE )wParam == NULL || lstrcmpA( cws->szSetting, "Status" ) )
     return 0;
   newStatus = cws->value.wVal;
   oldStatus = DBGetContactSettingWord((HANDLE)wParam,"UserOnline","OldStatus2",ID_STATUS_OFFLINE );
-  if (oldStatus == newStatus) return 0;
+  if (oldStatus == newStatus)
+	return 0;
+
+  tCurrentTime = time( NULL );
+  lpzProto = ( char* )CallService( MS_PROTO_GETCONTACTBASEPROTO, ( WPARAM )wParam, 0);
+
   if (oldStatus == ID_STATUS_OFFLINE)
-  { // TESTING: updating user's details
-    CallContactService( ( HANDLE )wParam, PSS_GETINFO, 0, 0 );
+  { 
+	// set online timestamp for this contact, only when not set already
+    if (!DBGetContactSettingDword( ( HANDLE )wParam, lpzProto, "LogonTS", FALSE))
+	  DBWriteContactSettingDword( ( HANDLE )wParam, lpzProto, "LogonTS", ( DWORD )tCurrentTime);
+
+	// TODO: dont reset logoff timestamp?
+	DBDeleteContactSetting( ( HANDLE )wParam, lpzProto, "LogoffTS");
+	
+	// TESTING: updating user's details
+	CallContactService( ( HANDLE )wParam, PSS_GETINFO, 0, 0 );
   }
   if (newStatus == ID_STATUS_OFFLINE)
   {
-    // set offline timestamp for this contact
-    time_t tCurrentTime;
-    char *lpzProto = ( char* )CallService( MS_PROTO_GETCONTACTBASEPROTO, ( WPARAM )wParam, 0);
-
-	tCurrentTime = time( NULL );
+    // set offline timestamp for this contact    
     DBWriteContactSettingDword( ( HANDLE )wParam, lpzProto, "LogoffTS", ( DWORD )tCurrentTime);
+	// reset logon timestamp
+	DBDeleteContactSetting( ( HANDLE )wParam, lpzProto, "LogonTS");
+
+	// set last status for this contact
+	DBWriteContactSettingDword( ( HANDLE )wParam, lpzProto, "LastStatus", ( DWORD )oldStatus);
   }
   DBWriteContactSettingWord( ( HANDLE )wParam, "UserOnline", "OldStatus2", newStatus);
   return 0;
@@ -1328,7 +1344,7 @@ static int PluginInit(WPARAM wparam,LPARAM lparam)
 
 	hHooks[0] = HookEvent(ME_CLIST_PREBUILDCONTACTMENU,BuildMenu);
 	hHooks[1] = HookEvent(ME_OPT_INITIALISE,OptionsInit);
-	hHooks[2] = HookEvent(ME_DB_CONTACT_SETTINGCHANGED,cmiex_ContactSettingChanged);
+	hHooks[2] = HookEvent(ME_DB_CONTACT_SETTINGCHANGED,ContactSettingChanged);
 	if (bMir_08)
 		hHooks[3] = HookEvent(ME_PROTO_ACCLISTCHANGED, EnumProtoSubmenu);
 	hHooks[4] = HookEvent(ME_MSG_TOOLBARLOADED, TabsrmmButtonsInit);
