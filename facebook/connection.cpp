@@ -220,12 +220,6 @@ void FacebookProto::UpdateLoop(void *)
 				break;
 		if ( !isOnline( ) )
 			break;
-		if ( i % 8 == 7 )
-			if ( !facy.idle_ )
-				facy.chat_first_touch_ = true;
-		/*if ( !facy.invisible_ )
-        if ( !facy.keep_alive( ) )
-				  break;*/
 		LOG( "***** FacebookProto::UpdateLoop[%d] going to sleep...", tim );
 		if ( SleepEx( GetPollRate( ) * 1000, true ) == WAIT_IO_COMPLETION )
 			break;
