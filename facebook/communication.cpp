@@ -344,8 +344,8 @@ std::string facebook_client::choose_action( int request_type, std::string* data 
 
 	case FACEBOOK_REQUEST_LOAD_FRIENDS:
 	{
-		std::string action = "/ajax/chat/user_info_all.php?__a=1&viewer=%s&__user=%s";
-		utils::text::replace_all( &action, "%s", self_.user_id );
+		std::string action = "/ajax/chat/user_info_all.php?__a=1&viewer=%s";
+		utils::text::replace_first( &action, "%s", self_.user_id );
 		return action;
 	}
 
@@ -943,18 +943,16 @@ bool facebook_client::buddy_list( )
 	handle_entry( "buddy_list" );
 
 	// Prepare update data
-	std::string data = "user=" + this->self_.user_id + "&__user=" + this->self_.user_id + "&popped_out=false&force_render=true&fetch_mobile=false&post_form_id=" + this->post_form_id_ + "&fb_dtsg=" + this->dtsg_ + "&post_form_id_source=AsyncRequest&lsd";
+	std::string data = "user=" + this->self_.user_id + "&popped_out=false&force_render=true&buddy_list=1&notifications=0&post_form_id=" + this->post_form_id_ + "&fb_dtsg=" + this->dtsg_ + "&post_form_id_source=AsyncRequest&__a=1&nctr[n]=1";
 
 	{
 		ScopedLock s(buddies_lock_);
 
-		int num = 0;
-		for (List::Item< facebook_user >* i = buddies.begin(); i != NULL; i = i->next, num++ )
+		for (List::Item< facebook_user >* i = buddies.begin(); i != NULL; i = i->next )
 		{
-			data += "&available_user_info_ids[";
-			data += num;
-			data += "]=";
+			data += "&available_list[";
 			data += i->data->user_id;
+			data += "][i]=0";
 		}
 	}
 
