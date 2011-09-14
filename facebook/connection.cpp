@@ -77,7 +77,7 @@ void FacebookProto::ChangeStatus(void*)
 
 		SetAllContactStatuses( ID_STATUS_OFFLINE );
 
-		ToggleStatusMenuItems(isOnline());
+		ToggleStatusMenuItems(false);
 
 		LOG("##### SignOff complete");
 
@@ -117,7 +117,7 @@ void FacebookProto::ChangeStatus(void*)
 			return;
 		}
 
-		ToggleStatusMenuItems(isOnline());
+		ToggleStatusMenuItems(true);
 		LOG("***** SignOn complete");
 	}
 	else if ( new_status == ID_STATUS_INVISIBLE )
