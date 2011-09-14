@@ -1110,24 +1110,42 @@ bool facebook_client::send_message( std::string message_recipient, std::string m
 {
 	handle_entry( "send_message" );
 
-	std::string data = "msg_text=";
-	data += utils::url::encode( message_text );
-	data += "&msg_id=";
-	data += utils::time::unix_timestamp( );
-	data += "&to=";
-	data += message_recipient;
-	data += "&client_time=";
-	data += utils::time::mili_timestamp( );
-	data += "&pvs_time=";
-	data += utils::time::mili_timestamp( );
-	data += "&fb_dtsg=";
-	data += ( this->dtsg_.length( ) ) ? this->dtsg_ : "0";
-	data += "&to_offline=false&to_idle=false&lsd=&post_form_id_source=AsyncRequest&num_tabs=1";
-	data += "&post_form_id=";
-	data += ( post_form_id_.length( ) ) ? post_form_id_ : "0&";
+	http::response resp;
 
-	http::response resp = flap( FACEBOOK_REQUEST_MESSAGE_SEND, &data );
+	if (parent->isInvisible()) {
+		// Use inbox send message when invisible
+		std::string data = "action=send&body=";
+		data += utils::url::encode( message_text );
+		data += "&recipients[0]=";
+		data += message_recipient;
+		data += "&lsd=&fb_dtsg=";
+		data += ( dtsg_.length( ) ) ? dtsg_ : "0";
+		data += "&post_form_id=";
+		data += ( post_form_id_.length( ) ) ? post_form_id_ : "0";
 
+		resp = flap( FACEBOOK_REQUEST_ASYNC, &data );	
+	} else {
+		// Use standard send message
+		std::string data = "msg_text=";
+		data += utils::url::encode( message_text );
+		data += "&msg_id=";
+		data += utils::time::unix_timestamp( );
+		data += "&to=";
+		data += message_recipient;
+		data += "&client_time=";
+		data += utils::time::mili_timestamp( );
+		data += "&pvs_time=";
+		data += utils::time::mili_timestamp( );
+		data += "&fb_dtsg=";
+		data += ( dtsg_.length( ) ) ? dtsg_ : "0";
+		data += "&to_offline=false&to_idle=false&lsd=&post_form_id_source=AsyncRequest&num_tabs=1";
+		data += "&post_form_id=";
+		data += ( post_form_id_.length( ) ) ? post_form_id_ : "0";
+
+		resp = flap( FACEBOOK_REQUEST_MESSAGE_SEND, &data );
+	}
+
+	
 	validate_response(&resp);
 	*error_text = resp.error_text;
 
