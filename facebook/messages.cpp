@@ -86,8 +86,8 @@ void FacebookProto::SendMsgWorker(void *p)
 		std::string error_text = "";
 		bool result = false;
 		while (!result && retries > 0) {
-			result = facy.send_message(dbv.pszVal, data->msg, &error_text);
 			retries--;
+			result = facy.send_message(dbv.pszVal, data->msg, &error_text, retries % 2 );
 		}
 		if (result) {
 			ProtoBroadcastAck(m_szModuleName,data->hContact,ACKTYPE_MESSAGE,ACKRESULT_SUCCESS, data->msgid,0);
