@@ -324,9 +324,6 @@ std::string facebook_client::choose_server( int request_type, std::string* data 
 		return server;
 	}
 
-//	case FACEBOOK_REQUEST_PROFILE_GET:
-//		return FACEBOOK_SERVER_MOBILE;
-
 //	case FACEBOOK_REQUEST_LOGOUT:
 //	case FACEBOOK_REQUEST_HOME:
 //	case FACEBOOK_REQUEST_PROFILE_GET:
