@@ -207,7 +207,7 @@ bool facebook_client::handle_error( std::string method, bool force_disconnect )
 DWORD facebook_client::choose_security_level( int request_type )
 {
 	if ( DBGetContactSettingByte( NULL, parent->m_szProtoName, FACEBOOK_KEY_FORCE_HTTPS, 0 ) )
-		if ( request_type != FACEBOOK_REQUEST_MESSAGES_RECEIVE )
+		//if ( request_type != FACEBOOK_REQUEST_MESSAGES_RECEIVE )
 			return NLHRF_SSL;
 
 	switch ( request_type )
