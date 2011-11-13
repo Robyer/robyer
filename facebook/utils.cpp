@@ -346,16 +346,7 @@ void __fastcall utils::mem::detract(void* p)
 
 void* __fastcall utils::mem::allocate(size_t size)
 {
-	void* p = NULL;
-
-	if (size)
-	{
-		p = malloc(size);
-
-		if (p)
-			ZeroMemory(p, size);
-	}
-	return p;
+	return mir_calloc(size);
 }
 
 int ext_to_format(const std::string &ext)
