@@ -298,6 +298,24 @@ std::string utils::text::source_get_value( std::string* data, unsigned int argum
 	return ret;
 }
 
+std::string utils::text::source_get_value2( std::string* data, const char *term, const char *endings)
+{
+	std::string::size_type start = 0, end = 0;
+	std::string ret;
+
+	start = data->find(term);
+	if (start != std::string::npos) {
+		start += strlen(term);
+
+		end = data->find_first_of(endings, start);
+		if (end != std::string::npos) {
+			ret = data->substr( start, end - start );
+		}
+	}
+
+	return ret;
+}
+
 int utils::number::random( )
 {
 	srand( ::time( NULL ) );

@@ -394,6 +394,10 @@ std::string facebook_client::choose_action( int request_type, std::string* data 
 	case FACEBOOK_REQUEST_RECONNECT:
 	{
 		std::string action = "/ajax/presence/reconnect.php?__a=1&reason=%s&iframe_loaded=false&post_form_id=%s";
+		
+		if (this->chat_reconnect_reason_.empty())
+			this->chat_reconnect_reason_ = "0";
+
 		utils::text::replace_first( &action, "%s", this->chat_reconnect_reason_ );
 		utils::text::replace_first( &action, "%s", this->post_form_id_ );
 		return action;
@@ -625,12 +629,12 @@ bool facebook_client::login(const std::string &username,const std::string &passw
 
 	if ( resp.code == HTTP_CODE_FOUND && resp.headers.find("Location") != resp.headers.end() )
 	{
-		// Check whether captcha is required
+		// Check whether some Facebook things are required
 		if ( resp.headers["Location"].find("help.php") != std::string::npos )
 		{
-			client_notify( TranslateT("Login error: Captcha code is required. Bad login credentials?") );
-			parent->Log(" ! !  Login error: Captcha code is required.");
-			return handle_error( "login", FORCE_DISCONNECT );
+			client_notify( TranslateT("Login error: Some Facebook things are required.") );
+			parent->Log(" ! !  Login error: Some Facebook things are required.");
+			// return handle_error( "login", FORCE_DISCONNECT );
 		}
 		
 		// Check whether setting Machine name is required
@@ -806,12 +810,8 @@ bool facebook_client::home( )
 		this->post_form_id_ = utils::text::source_get_value( &resp.data, 2, "post_form_id:\"", "\"" );
 		parent->Log("      Got self post form id: %s", this->post_form_id_.c_str());
 
-		// If something would go wrong:
-//			this->post_form_id_ = resp.data.substr( resp.data.find( "post_form_id:" ) + 14, 48 );
-//			this->post_form_id_ = this->post_form_id_.substr( 0, this->post_form_id_.find( "\"" ) );
-
 		// Get dtsg
-		this->dtsg_ = utils::text::source_get_value( &resp.data, 2, ",fb_dtsg:\"", "\"" );
+		this->dtsg_ = utils::text::source_get_value( &resp.data, 2, "fb_dtsg:\"", "\"" );
 		parent->Log("      Got self dtsg: %s", this->dtsg_.c_str());
 
 		// Get logout hash
@@ -887,7 +887,7 @@ bool facebook_client::home( )
 	}
 	case HTTP_CODE_FOUND:
 		// Work-around for replica_down, f**king hell what's that?
-		parent->Log("      REPLICA_DOWN is back in force!");// What a regression, muhahaha! Revert to revision 88 to take care about this...");
+		parent->Log("      REPLICA_DOWN is back in force!");
 		return this->home();
 	
 	default:
@@ -929,13 +929,13 @@ bool facebook_client::reconnect( )
 		this->chat_channel_jslogger_ = utils::text::source_get_value( &resp.data, 2, "\"jslogger_suffix\":\"", "\"" );
 		parent->Log("      Got self channel jslogger: %s", this->chat_channel_jslogger_.c_str());
 				
-		this->chat_channel_partition_ = utils::text::source_get_value( &resp.data, 2, "\"partition\":", "," );
+		this->chat_channel_partition_ = utils::text::source_get_value2( &resp.data, "\"partition\":", ",}" );
 		parent->Log("      Got self channel partition: %s", this->chat_channel_partition_.c_str());
 		
 		this->chat_channel_host_ = utils::text::source_get_value( &resp.data, 2, "\"host\":\"", "\"" );
 		parent->Log("      Got self channel host: %s", this->chat_channel_host_.c_str());
 
-		this->chat_sequence_num_ = utils::text::source_get_value( &resp.data, 2, "\"seq\":", "," );
+		this->chat_sequence_num_ = utils::text::source_get_value2( &resp.data, "\"seq\":", ",}" );
 		parent->Log("      Got self sequence number: %s", this->chat_sequence_num_.c_str());
 
 		if (this->chat_channel_jslogger_.empty()) {
@@ -1073,27 +1073,22 @@ bool facebook_client::channel( )
 	{
 		// Something went wrong (server flooding?)
 
-		parent->Log("___need fullreload___");
+		parent->Log("! ! ! Requested full reload");
     
-		this->chat_sequence_num_ = utils::text::source_get_value( &resp.data, 2, "\"seq\":", "," );
+		this->chat_sequence_num_ = utils::text::source_get_value2( &resp.data, "\"seq\":", ",}" );
 		parent->Log("      Got self sequence number: %s", this->chat_sequence_num_.c_str());
 
-		this->chat_reconnect_reason_ = utils::text::source_get_value( &resp.data, 2, "\"reason\":", "}" );
+		this->chat_reconnect_reason_ = utils::text::source_get_value2( &resp.data, "\"reason\":", ",}" );
 		parent->Log("      Reconnect reason: %s", this->chat_reconnect_reason_.c_str());
-
-//		client_notify(TranslateT("Required channel refresh, maybe we didn't received all messages.\nYou should check Facebook website to be sure."));
-		// TODO RM: reconnect isnt needed
-		// return this->reconnect( );
 	}
 	else if ( resp.data.find( "\"t\":\"refresh\"" ) != std::string::npos )
 	{
 		// Something went wrong (server flooding?)
-		parent->Log("___need refresh___");
+		parent->Log("! ! ! Requested channel refresh");
     
-		this->chat_reconnect_reason_ = utils::text::source_get_value( &resp.data, 2, "\"reason\":", "}" );
+		this->chat_reconnect_reason_ = utils::text::source_get_value2( &resp.data, "\"reason\":", ",}" );
 		parent->Log("      Reconnect reason: %s", this->chat_reconnect_reason_.c_str());
 
-//		client_notify(TranslateT("Required channel refresh, maybe we didn't received all messages.\nYou should check Facebook website to be sure."));
 		return this->reconnect( );
 	} else {
 		// Something has been received, throw to new thread to process
@@ -1101,7 +1096,7 @@ bool facebook_client::channel( )
 		ForkThread( &FacebookProto::ProcessMessages, this->parent, ( void* )response_data );
 
 		// Increment sequence number
-		this->chat_sequence_num_ = utils::text::source_get_value( &resp.data, 2, "\"seq\":", "," );
+		this->chat_sequence_num_ = utils::text::source_get_value2( &resp.data, "\"seq\":", ",}" );
 		parent->Log("      Got self sequence number: %s", this->chat_sequence_num_.c_str());
 	}
 
@@ -1112,15 +1107,6 @@ bool facebook_client::channel( )
 		return handle_success( "channel" );
 
 	case HTTP_CODE_FAKE_DISCONNECTED:
-		if ( parent->m_iStatus == ID_STATUS_INVISIBLE )
-			return handle_success( "channel" );
-		
-		// workaround for different channels - doesnt work, need better one...
-/*		if (this->chat_channel_jslogger_.empty())
-			this->chat_channel_jslogger_ = "SOMETHING";
-		else
-			this->chat_channel_jslogger_.erase(); */
-
 	case HTTP_CODE_FAKE_ERROR:
 	default:
 		return handle_error( "channel" );
