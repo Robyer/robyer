@@ -71,6 +71,8 @@ void FacebookProto::ChangeStatus(void*)
 		m_iStatus = facy.self_.status_id = ID_STATUS_CONNECTING;
 		ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS, (HANDLE)old_status, m_iStatus);
 
+		ResetEvent(update_loop_lock_);
+
 		if ( NegotiateConnection( ) )
 		{			
 			facy.last_feeds_update_ = ::time( NULL );
