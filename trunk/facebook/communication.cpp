@@ -931,16 +931,18 @@ bool facebook_client::buddy_list( )
 	handle_entry( "buddy_list" );
 
 	// Prepare update data
-	std::string data = "user=" + this->self_.user_id + "&popped_out=false&force_render=true&buddy_list=1&notifications=0&post_form_id=" + this->post_form_id_ + "&fb_dtsg=" + this->dtsg_ + "&post_form_id_source=AsyncRequest&__a=1&nctr[n]=1";
+	std::string data = "user=" + this->self_.user_id + "&force_render=true&fetch_mobile=true&post_form_id=" + this->post_form_id_ + "&fb_dtsg=" + this->dtsg_ + "&lsd=&post_form_id_source=AsyncRequest&__user=" + this->self_.user_id;
 
 	{
 		ScopedLock s(buddies_lock_);
 
+		int counter = 0;
 		for (List::Item< facebook_user >* i = buddies.begin(); i != NULL; i = i->next )
 		{
-			data += "&available_list[";
+			data += "&available_user_info_ids[";
+			data += counter++;
+			data += "]=";
 			data += i->data->user_id;
-			data += "][i]=0";
 		}
 	}
 
