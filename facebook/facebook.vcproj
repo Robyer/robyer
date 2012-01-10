@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9.00"
+	Version="9,00"
 	Name="facebook"
 	ProjectGUID="{DADE9455-DC28-465A-9604-2CA28052B9FB}"
 	RootNamespace="facebook"
@@ -565,6 +565,10 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 			<File
+				RelativePath=".\icons\addFriend.ico"
+				>
+			</File>
+			<File
 				RelativePath=".\icons\facebook.ico"
 				>
 			</File>
@@ -574,6 +578,10 @@
 			</File>
 			<File
 				RelativePath=".\icons\mind.ico"
+				>
+			</File>
+			<File
+				RelativePath=".\icons\removeFriend.ico"
 				>
 			</File>
 			<File
