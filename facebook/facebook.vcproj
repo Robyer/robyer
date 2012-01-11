@@ -373,6 +373,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\chat.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\communication.cpp"
 				>
 			</File>
