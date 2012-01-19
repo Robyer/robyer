@@ -506,13 +506,11 @@ int facebook_json_parser::parse_messages( void* data, std::vector< facebook_mess
 				const Object& messageContent = objMember["msg"];
   				const String& text = messageContent["text"];
 
-				std::string msg = utils::text::remove_html(
-					utils::text::special_expressions_decode(
-						utils::text::slashu_to_utf8( text.Value( ) ) ) );
+				std::string msg = utils::text::special_expressions_decode(
+						utils::text::slashu_to_utf8( text.Value( ) ) );
 
-				std::string name = utils::text::remove_html(
-					utils::text::special_expressions_decode(
-						utils::text::slashu_to_utf8( from_name.Value( ) ) ) );
+				std::string name = utils::text::special_expressions_decode(
+						utils::text::slashu_to_utf8( from_name.Value( ) ) );
 
 				// Add contact into chat, if isn't there already
 				if (!proto->IsChatContact(group_id, was_id))
@@ -542,19 +540,16 @@ int facebook_json_parser::parse_messages( void* data, std::vector< facebook_mess
 				last_msg = text.Value();
 
 
-				std::string popup_text = utils::text::remove_html(
-					utils::text::special_expressions_decode(
-						utils::text::slashu_to_utf8( from_name.Value( ) ) ) );
+				std::string popup_text = utils::text::special_expressions_decode(
+						utils::text::slashu_to_utf8( from_name.Value( ) ) );
 				popup_text += ": ";
-				popup_text += utils::text::remove_html(
-					utils::text::special_expressions_decode(
-						utils::text::slashu_to_utf8( text.Value( ) ) ) );
+				popup_text += utils::text::special_expressions_decode(
+						utils::text::slashu_to_utf8( text.Value( ) ) );
 
 				std::string title = Translate("Multichat");
 				title += ": ";
-				title += utils::text::remove_html(
-					utils::text::special_expressions_decode(
-						utils::text::slashu_to_utf8( to_name.Value( ) ) ) );
+				title += utils::text::special_expressions_decode(
+						utils::text::slashu_to_utf8( to_name.Value( ) ) );
 				
 				std::string url = "/?action=read&sk=inbox&page&query&tid=";
 				url += to_id.Value();
