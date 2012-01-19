@@ -433,7 +433,7 @@ int facebook_json_parser::parse_messages( void* data, std::vector< facebook_mess
 						message->time = ::time( NULL );						
 						message->user_id = was_id; // TODO: Check if we have contact with this ID in friendlist and then do something different?
 
-						if (row.find("uiSplitPic",0) != std::string.npos) {
+						if (row.find("uiSplitPic",0) != std::string::npos) {
 							// This is multiuser message
 							
 							std::string authors = utils::text::special_expressions_decode(
