@@ -30,4 +30,5 @@ Last change on : $Date: 2011-01-08 11:10:34 +0100 (so, 08 1 2011) $
 INT_PTR CALLBACK FBAccountProc( HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam );
 INT_PTR CALLBACK FBMindProc( HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam );
 INT_PTR CALLBACK FBOptionsProc( HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam );
+INT_PTR CALLBACK FBOptionsAdvancedProc( HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam );
 INT_PTR CALLBACK FBEventsProc( HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam );
