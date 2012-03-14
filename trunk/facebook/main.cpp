@@ -177,10 +177,10 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 	// Init native User-Agent
 	{
 		std::stringstream agent;
-//		DWORD mir_ver = ( DWORD )Calda IM/";
+//		DWORD mir_ver = ( DWORD )CallService( MS_SYSTEM_GETVERSION, NULL, NULL );
+		agent << "MirandaIM/";
 		agent << (( g_mirandaVersion >> 24) & 0xFF);
-		agent << ".";lService( MS_SYSTEM_GETVERSION, NULL, NULL );
-		agent << "Miran
+		agent << ".";
 		agent << (( g_mirandaVersion >> 16) & 0xFF);
 		agent << ".";
 		agent << (( g_mirandaVersion >>  8) & 0xFF);
