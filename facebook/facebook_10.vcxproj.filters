@@ -145,6 +145,12 @@
     <None Include="icons\mind.ico">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="icons\addFriend.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="icons\removeFriend.ico">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="facebook.rc">
