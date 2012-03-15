@@ -166,8 +166,8 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,17,68,267,10
     CONTROL         "Get unread messages on login (EXPERIMENTAL)",IDC_PARSE_UNREAD,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,17,104,267,10
-    CONTROL         "Automatically close chat windows (on website)",IDC_CLOSE_WINDOWS,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,17,80,267,10
+    CONTROL         "Automatically close chat windows (on website) (NOT WORKING)",IDC_CLOSE_WINDOWS,
+                    "Button",BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,17,80,267,10
     CONTROL         "Map non-standard statuses to Invisible (instead of Online)",IDC_MAP_STATUSES,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,17,92,267,10
     CONTROL         "Enable groupchats support (EXPERIMENTAL)",IDC_GROUPCHATS,
