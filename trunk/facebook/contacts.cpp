@@ -204,11 +204,19 @@ HANDLE FacebookProto::GetAwayMsg(HANDLE hContact)
 int FacebookProto::OnContactDeleted(WPARAM wparam,LPARAM)
 {
 	HANDLE hContact = (HANDLE)wparam;
-	
-	// TODO: load contact name and show it in messagebox
 
-	if (MessageBox( 0, TranslateT("Do you want to delete this contact also from server list?"), m_tszUserName, MB_ICONWARNING | MB_YESNO | MB_DEFBUTTON2 ) == IDYES) {
-		DBVARIANT dbv;			
+	DBVARIANT dbv;
+	TCHAR text[512];
+	if ( !DBGetContactSettingTString(hContact, m_szModuleName, FACEBOOK_KEY_NAME, &dbv) ) {
+		mir_sntprintf(text,SIZEOF(text),TranslateT("Do you want to delete contact '%s' from server list?"),dbv.ptszVal);
+		DBFreeVariant(&dbv);
+	} else if( !DBGetContactSettingTString(hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv) ) {
+		mir_sntprintf(text,SIZEOF(text),TranslateT("Do you want to delete contact '%s' from server list?"),dbv.ptszVal);
+		DBFreeVariant(&dbv);
+	}		
+
+	if (MessageBox( 0, text, m_tszUserName, MB_ICONWARNING | MB_YESNO | MB_DEFBUTTON2 ) == IDYES) {
+		
 		if( !DBGetContactSettingString(hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv) )
 		{
 			if (!isOffline()) { // TODO: is this needed?
