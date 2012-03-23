@@ -98,7 +98,8 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">
     <PreBuildEvent>
-      <Command>$(SolutionDir)incrementbuild.exe</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
     <ClCompile>
       <Optimization>Disabled</Optimization>
@@ -134,7 +135,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|x64'">
     <PreBuildEvent>
-      <Command>$(SolutionDir)incrementbuild.exe</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
     <Midl>
       <TargetEnvironment>X64</TargetEnvironment>
@@ -172,7 +174,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'">
     <PreBuildEvent>
-      <Command>"$(ProjectDir)incrementbuild.exe"</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
     <ClCompile>
       <Optimization>Full</Optimization>
@@ -220,7 +223,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Unicode|x64'">
     <PreBuildEvent>
-      <Command>"$(ProjectDir)incrementbuild.exe"</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
     <Midl>
       <TargetEnvironment>X64</TargetEnvironment>
@@ -290,7 +294,6 @@
     <ClInclude Include="JSON_CAJUN\visitor.h" />
     <ClInclude Include="JSON_CAJUN\writer.h" />
     <ClInclude Include="avatars.h" />
-    <ClInclude Include="build.h" />
     <ClInclude Include="client.h" />
     <ClInclude Include="common.h" />
     <ClInclude Include="constants.h" />
