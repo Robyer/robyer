@@ -116,10 +116,10 @@ static const struct
 	const char *name;
 	const char *id;
 } feed_types[] = {
-	{ "Most Recent", "lf" },
-	{ "Status Updates", "app_2915120374" },
-	{ "Top News", "h" },
+	{ "Most Recent", "lf_" }, //h_chr?
+	{ "Wall Posts", "app_2915120374" },
+	{ "Top News", "h_nor" }, //h
 	{ "Photos", "app_2305272732_2392950137" },
 	{ "Links", "app_2309869772" },
-
+	{ "Apps and Games", "appsandgames" },
 };

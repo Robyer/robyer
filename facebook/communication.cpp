@@ -372,8 +372,8 @@ std::string facebook_client::choose_action( int request_type, std::string* data 
 
 	case FACEBOOK_REQUEST_LOAD_FRIENDS:
 	{
-		std::string action = "/ajax/chat/user_info_all.php?__a=1&viewer=%s";
-		utils::text::replace_first( &action, "%s", self_.user_id );
+		std::string action = "/ajax/chat/user_info_all.php?__a=1&viewer=%s&__user=%s";
+		utils::text::replace_all( &action, "%s", self_.user_id );
 		return action;
 	}
 
@@ -391,9 +391,10 @@ std::string facebook_client::choose_action( int request_type, std::string* data 
 	{
 		std::string action = "/ajax/intent.php?filter=";
 		action += get_newsfeed_type();
-		action += "&request_type=1&__a=1&newest=%s&ignore_self=true";
+		action += "&request_type=4&__a=1&newest=%s&ignore_self=true&load_newer=true&__user=%s";
 		std::string newest = utils::conversion::to_string((void*)&this->last_feeds_update_, UTILS_CONV_TIME_T);
 		utils::text::replace_first( &action, "%s", newest );
+		utils::text::replace_first( &action, "%s", self_.user_id );
 		return action;
 	}
 
@@ -409,7 +410,7 @@ std::string facebook_client::choose_action( int request_type, std::string* data 
 		std::string action = "/ajax/presence/reconnect.php?__a=1&reason=%s&fb_dtsg=%s&post_form_id=%s&__user=%s";
 		
 		if (this->chat_reconnect_reason_.empty())
-			this->chat_reconnect_reason_ = "0"; // 6?
+			this->chat_reconnect_reason_ = "6";
 
 		utils::text::replace_first( &action, "%s", this->chat_reconnect_reason_ );
 		utils::text::replace_first( &action, "%s", this->dtsg_ );
@@ -440,7 +441,7 @@ std::string facebook_client::choose_action( int request_type, std::string* data 
 	}
 
 	case FACEBOOK_REQUEST_VISIBILITY:
-		return "/ajax/chat/visibility.php?__a=1";
+		return "/ajax/chat/privacy/visibility.php?__a=1";
 
 	case FACEBOOK_REQUEST_TABS:
 		return "/ajax/chat/tabs.php?__a=1";
@@ -891,13 +892,14 @@ bool facebook_client::chat_state( bool online )
 	handle_entry( "chat_state" );
   
 	std::string data = "visibility=";
-	data += ( online ) ? "true" : "false";
+	data += ( online ) ? "1" : "0";
 	data += "&window_id=0";
 	data += "&post_form_id=";
 	data += ( post_form_id_.length( ) ) ? post_form_id_ : "0";
 	data += "&post_form_id_source=AsyncRequest";
 	data += "&fb_dtsg=" + this->dtsg_;
-	data += "&lsd=";
+	data += "&lsd=&phstamp=0&__user=";
+	data += self_.user_id;
 	http::response resp = flap( FACEBOOK_REQUEST_VISIBILITY, &data );
   
 	return handle_success( "chat_state" );
