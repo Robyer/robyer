@@ -1068,18 +1068,12 @@ bool facebook_client::feeds( )
 	// Process result data
 	validate_response(&resp);
   
-	std::string::size_type pos = 0;
 	switch ( resp.code )
 	{
 	case HTTP_CODE_OK:
-		pos = resp.data.find( "\"storyCount\":" );
-		if ( pos != std::string::npos )
-		{
-			if (resp.data.substr( pos + 13, 1 ) != "0")
-			{
-				std::string* response_data = new std::string( resp.data );
-			    ForkThread( &FacebookProto::ProcessFeeds, this->parent, ( void* )response_data );
-			}
+		if (resp.data.find("\"num_stories\":0") == std::string::npos) {
+			std::string* response_data = new std::string( resp.data );
+		    ForkThread( &FacebookProto::ProcessFeeds, this->parent, ( void* )response_data );
 		}
 		return handle_success( "feeds" );
 
