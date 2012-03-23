@@ -83,9 +83,6 @@
     <ClInclude Include="avatars.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="build.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="client.h">
       <Filter>Header Files</Filter>
     </ClInclude>
