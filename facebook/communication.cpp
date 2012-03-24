@@ -400,8 +400,8 @@ std::string facebook_client::choose_action( int request_type, std::string* data 
 
 	case FACEBOOK_REQUEST_NOTIFICATIONS:
 	{
-		std::string action = "/ajax/notifications/get.php?__a=1&user=%s&time=0&version=2";
-		utils::text::replace_first( &action, "%s", self_.user_id );
+		std::string action = "/ajax/notifications/get.php?__a=1&user=%s&time=0&version=2&__user=%s";
+		utils::text::replace_all( &action, "%s", self_.user_id );
 		return action;
 	}
 	
