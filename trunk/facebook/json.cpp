@@ -289,24 +289,27 @@ int facebook_json_parser::parse_notifications( void *data, std::vector< facebook
 		Reader::Read(objDocument, sDocument);
 
 		const Object& objRoot = objDocument;
-		const Object& payload = objRoot["payload"]["markup_map"];
+		const Object& payload = objRoot["payload"]["notifications"];
 
 		for ( Object::const_iterator payload_item( payload.Begin() ); payload_item != payload.End(); ++payload_item)
 		{
 			const Object::Member& member = *payload_item;
+			
+			const Object& objMember = member.element;
 
-			const String& content = member.element;
-
+			const String& content = objMember["markup"];
+			const Number& unread = objMember["unread"];
+			
+			if (unread.Value() == 0) // ignore old notifications
+				continue;
+			
 			std::string text = utils::text::slashu_to_utf8(
 								utils::text::special_expressions_decode( content.Value() ) );
-
-			if (text.find("jewelItemNew") == std::string::npos)
-				continue; // we want only unread notifications
 
 			facebook_notification* notification = new facebook_notification( );
 			
 			notification->text = utils::text::remove_html( utils::text::source_get_value(&text, 1, "<abbr") );
-			notification->link = utils::text::source_get_value(&text, 2, "<a href=\"", "\"");
+			notification->link = utils::text::source_get_value(&text, 3, "<a ", "href=\"", "\"");
 
 			notifications->push_back( notification );
 		}
