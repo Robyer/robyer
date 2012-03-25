@@ -91,6 +91,9 @@ void FacebookProto::ChangeStatus(void*)
 
 			facy.load_friends();
 
+			if (getByte(FACEBOOK_KEY_PARSE_MESSAGES, DEFAULT_PARSE_MESSAGES))
+				ForkThread( &FacebookProto::ProcessUnreadMessages, this );
+
 			setDword( "LogonTS", (DWORD)time(NULL) );
 			ForkThread( &FacebookProto::UpdateLoop,  this );
 			ForkThread( &FacebookProto::MessageLoop, this );
@@ -123,7 +126,7 @@ void FacebookProto::ChangeStatus(void*)
 
 	facy.chat_state( m_iDesiredStatus != ID_STATUS_INVISIBLE );	
 	facy.buddy_list( );
-	facy.facepiles( );
+	//facy.facepiles( );
 
 	m_iStatus = facy.self_.status_id = m_iDesiredStatus;
 	ProtoBroadcastAck(m_szModuleName, 0, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE)old_status, m_iStatus);
@@ -175,6 +178,9 @@ bool FacebookProto::NegotiateConnection( )
 		DBFreeVariant(&dbv);
 	}
 
+	// Get info about secured connection
+	facy.https_ = DBGetContactSettingByte(NULL, m_szModuleName, FACEBOOK_KEY_FORCE_HTTPS, DEFAULT_FORCE_HTTPS ) != 0;
+
 	return facy.login( user, pass );
 }
 
@@ -189,9 +195,9 @@ void FacebookProto::UpdateLoop(void *)
 			if ( !facy.invisible_ )
 				if ( !facy.buddy_list( ) )
     				break;
-			if ( getByte( FACEBOOK_KEY_ENABLE_GROUPCHATS, DEFAULT_ENABLE_GROUPCHATS) )
+/*			if ( getByte( FACEBOOK_KEY_ENABLE_GROUPCHATS, DEFAULT_ENABLE_GROUPCHATS) )
 				if ( !facy.facepiles( ) )
-					break;
+					break;*/
 		}
 		if ( i == 2 && getByte( FACEBOOK_KEY_EVENT_FEEDS_ENABLE, DEFAULT_EVENT_FEEDS_ENABLE ) )
 			if ( !facy.feeds( ) )

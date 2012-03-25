@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // Product management
 #define FACEBOOK_NAME               "Facebook"
-#define FACEBOOK_URL_HOMEPAGE       "http://www.facebook.com/"
+#define FACEBOOK_URL_HOMEPAGE       "http://www.facebook.com"
 #define FACEBOOK_URL_REQUESTS       "http://www.facebook.com/n/?reqs.php"
 #define FACEBOOK_URL_MESSAGES       "http://www.facebook.com/n/?inbox"
 #define FACEBOOK_URL_NOTIFICATIONS  "http://www.facebook.com/n/?notifications.php"
@@ -102,9 +102,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define FACEBOOK_REQUEST_MESSAGES_RECEIVE       301 // receiving messages
 #define FACEBOOK_REQUEST_TYPING_SEND            304 // sending typing notification
 #define FACEBOOK_REQUEST_VISIBILITY             305 // setting chat visibility
-#define FACEBOOK_REQUEST_TABS					306 // closing message window, setting chat visibility
+#define FACEBOOK_REQUEST_TABS					306 // closing message window
 #define	FACEBOOK_REQUEST_ASYNC					307 // marking messages read and getting other things
-#define FACEBOOK_REQUEST_ASYNC_GET				308 // GET version of async request
+#define FACEBOOK_REQUEST_UNREAD					400 // getting unread threads
 
 #define FACEBOOK_RECV_MESSAGE	1
 #define FACEBOOK_SEND_MESSAGE	2

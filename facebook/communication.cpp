@@ -27,11 +27,11 @@ void facebook_client::client_notify( TCHAR* message )
 	parent->NotifyEvent( parent->m_tszUserName, message, NULL, FACEBOOK_EVENT_CLIENT );
 }
 
-http::response facebook_client::flap( const int request_type, std::string* request_data )
+http::response facebook_client::flap( const int request_type, std::string* request_data, std::string* request_get_data )
 {
 	NETLIBHTTPREQUEST nlhr = {sizeof( NETLIBHTTPREQUEST )};
 	nlhr.requestType = choose_method( request_type );
-	std::string url = choose_request_url( request_type, request_data );
+	std::string url = choose_request_url( request_type, request_data, request_get_data );
 	nlhr.szUrl = (char*)url.c_str( );
 	nlhr.flags = NLHRF_HTTP11 | /*NLHRF_NODUMP |*/ choose_security_level( request_type );
 	nlhr.headers = get_request_headers( request_type, &nlhr.headersCount );
@@ -204,9 +204,10 @@ bool facebook_client::handle_error( std::string method, bool force_disconnect )
 
 DWORD facebook_client::choose_security_level( int request_type )
 {
-	if ( DBGetContactSettingByte( NULL, parent->m_szProtoName, FACEBOOK_KEY_FORCE_HTTPS, DEFAULT_FORCE_HTTPS ) ) {				
+	if (this->https_)
+	{
 		if ( request_type != FACEBOOK_REQUEST_MESSAGES_RECEIVE
-			|| DBGetContactSettingByte( NULL, parent->m_szProtoName, FACEBOOK_KEY_FORCE_HTTPS_CHANNEL, DEFAULT_FORCE_HTTPS_CHANNEL ) )
+			|| DBGetContactSettingByte( NULL, parent->m_szModuleName, FACEBOOK_KEY_FORCE_HTTPS_CHANNEL, DEFAULT_FORCE_HTTPS_CHANNEL ) )
 			return NLHRF_SSL;
 	}
 
@@ -232,7 +233,7 @@ DWORD facebook_client::choose_security_level( int request_type )
 //	case FACEBOOK_REQUEST_VISIBILITY:
 //	case FACEBOOK_REQUEST_TABS:
 //	case FACEBOOK_REQUEST_ASYNC:
-//	case FACEBOOK_REQUEST_ASYNC_GET:
+//	case FACEBOOK_REQUEST_UNREAD:
 //	case FACEBOOK_REQUEST_TYPING_SEND:
 	default:
 		return ( DWORD )0;
@@ -252,6 +253,7 @@ int facebook_client::choose_method( int request_type )
 	case FACEBOOK_REQUEST_VISIBILITY:
 	case FACEBOOK_REQUEST_TABS:
 	case FACEBOOK_REQUEST_ASYNC:
+	case FACEBOOK_REQUEST_UNREAD:
 	case FACEBOOK_REQUEST_TYPING_SEND:
 	case FACEBOOK_REQUEST_LOGOUT:
 	case FACEBOOK_REQUEST_DELETE_FRIEND:
@@ -264,7 +266,6 @@ int facebook_client::choose_method( int request_type )
 //	case FACEBOOK_REQUEST_NOTIFICATIONS:
 //	case FACEBOOK_REQUEST_RECONNECT:
 //	case FACEBOOK_REQUEST_LOAD_FRIENDS:
-//	case FACEBOOK_REQUEST_ASYNC_GET:
 	default:
 		return REQUEST_GET;
 	}
@@ -272,9 +273,9 @@ int facebook_client::choose_method( int request_type )
 
 std::string facebook_client::choose_proto( int request_type )
 {
-	if ( DBGetContactSettingByte( NULL, parent->m_szProtoName, FACEBOOK_KEY_FORCE_HTTPS, DEFAULT_FORCE_HTTPS ) ) {				
+	if (this->https_) {
 		if ( request_type != FACEBOOK_REQUEST_MESSAGES_RECEIVE
-			|| DBGetContactSettingByte( NULL, parent->m_szProtoName, FACEBOOK_KEY_FORCE_HTTPS_CHANNEL, DEFAULT_FORCE_HTTPS_CHANNEL ) )
+			|| DBGetContactSettingByte( NULL, parent->m_szModuleName, FACEBOOK_KEY_FORCE_HTTPS_CHANNEL, DEFAULT_FORCE_HTTPS_CHANNEL ) )
 			return HTTP_PROTO_SECURE;
 	}			
 
@@ -294,7 +295,7 @@ std::string facebook_client::choose_proto( int request_type )
 //	case FACEBOOK_REQUEST_VISIBILITY:
 //	case FACEBOOK_REQUEST_TABS:
 //	case FACEBOOK_REQUEST_ASYNC:
-//	case FACEBOOK_REQUEST_ASYNC_GET:
+//	case FACEBOOK_REQUEST_UNREAD:
 //	case FACEBOOK_REQUEST_TYPING_SEND:
 //  case FACEBOOK_REQUEST_DELETE_FRIEND:
 //	case FACEBOOK_REQUEST_ADD_FRIEND:
@@ -307,7 +308,7 @@ std::string facebook_client::choose_proto( int request_type )
 	}
 }
 
-std::string facebook_client::choose_server( int request_type, std::string* data )
+std::string facebook_client::choose_server( int request_type, std::string* data, std::string* get_data )
 {
 	switch ( request_type )
 	{
@@ -338,7 +339,7 @@ std::string facebook_client::choose_server( int request_type, std::string* data 
 //	case FACEBOOK_REQUEST_VISIBILITY:
 //	case FACEBOOK_REQUEST_TABS:
 //	case FACEBOOK_REQUEST_ASYNC:
-//	case FACEBOOK_REQUEST_ASYNC_GET:
+//	case FACEBOOK_REQUEST_UNREAD:
 //	case FACEBOOK_REQUEST_TYPING_SEND:
 //	case FACEBOOK_REQUEST_SETUP_MACHINE:
 //  case FACEBOOK_REQUEST_DELETE_FRIEND:
@@ -348,7 +349,7 @@ std::string facebook_client::choose_server( int request_type, std::string* data 
 	}
 }
 
-std::string facebook_client::choose_action( int request_type, std::string* data )
+std::string facebook_client::choose_action( int request_type, std::string* data, std::string* get_data )
 {
 	switch ( request_type )
 	{
@@ -447,14 +448,16 @@ std::string facebook_client::choose_action( int request_type, std::string* data 
 		return "/ajax/chat/tabs.php?__a=1";
 
 	case FACEBOOK_REQUEST_ASYNC:
-		return "/ajax/messaging/async.php?__a=1";
-
-	case FACEBOOK_REQUEST_ASYNC_GET:
 	{
-		std::string action = "/ajax/messaging/async.php?__a=1&%s";
-		utils::text::replace_first( &action, "%s", (*data) );
+		std::string action = "/ajax/messaging/async.php?__a=1";
+		if (get_data != NULL) {
+			action += "&" + (*get_data);
+		}
 		return action;
 	}
+
+	case FACEBOOK_REQUEST_UNREAD:
+		return "/ajax/mercury/unread_threads.php?__a=1";
 
 	case FACEBOOK_REQUEST_TYPING_SEND:
 		return "/ajax/messaging/typ.php?__a=1";
@@ -464,11 +467,11 @@ std::string facebook_client::choose_action( int request_type, std::string* data 
 	}
 }
 
-std::string facebook_client::choose_request_url( int request_type, std::string* data )
+std::string facebook_client::choose_request_url( int request_type, std::string* data, std::string* get_data )
 {
 	std::string url = choose_proto( request_type );
-	url.append( choose_server( request_type, data ) );
-	url.append( choose_action( request_type, data ) );
+	url.append( choose_server( request_type, data, get_data ) );
+	url.append( choose_action( request_type, data, get_data ) );
 	return url;
 }
 
@@ -486,7 +489,7 @@ NETLIBHTTPHEADER* facebook_client::get_request_headers( int request_type, int* h
 	case FACEBOOK_REQUEST_VISIBILITY:
 	case FACEBOOK_REQUEST_TABS:
 	case FACEBOOK_REQUEST_ASYNC:
-	case FACEBOOK_REQUEST_ASYNC_GET:
+	case FACEBOOK_REQUEST_UNREAD:
 	case FACEBOOK_REQUEST_TYPING_SEND:
 	case FACEBOOK_REQUEST_DELETE_FRIEND:
 	case FACEBOOK_REQUEST_ADD_FRIEND:
@@ -517,7 +520,7 @@ NETLIBHTTPHEADER* facebook_client::get_request_headers( int request_type, int* h
 	case FACEBOOK_REQUEST_VISIBILITY:
 	case FACEBOOK_REQUEST_TABS:
 	case FACEBOOK_REQUEST_ASYNC:
-	case FACEBOOK_REQUEST_ASYNC_GET:
+	case FACEBOOK_REQUEST_UNREAD:
 	case FACEBOOK_REQUEST_TYPING_SEND:
 	case FACEBOOK_REQUEST_DELETE_FRIEND:
 	case FACEBOOK_REQUEST_ADD_FRIEND:
@@ -662,12 +665,13 @@ bool facebook_client::login(const std::string &username,const std::string &passw
 	if ( resp.code == HTTP_CODE_FOUND && resp.headers.find("Location") != resp.headers.end() )
 	{
 		// Check whether HTTPS connection is required and we don't have enabled it
-		if ( !DBGetContactSettingByte( NULL, parent->m_szProtoName, FACEBOOK_KEY_FORCE_HTTPS, DEFAULT_FORCE_HTTPS ) )
+		if (!this->https_)
 		{    
 			if ( resp.headers["Location"].find("https://") != std::string::npos )
 			{
 				client_notify(TranslateT("Your account requires HTTPS connection. Activating."));
-				DBWriteContactSettingByte( NULL, parent->m_szProtoName, FACEBOOK_KEY_FORCE_HTTPS, 1 );
+				DBWriteContactSettingByte(NULL, parent->m_szModuleName, FACEBOOK_KEY_FORCE_HTTPS, 1);
+				this->https_ = true;
 			}
 		}
 
@@ -820,7 +824,7 @@ bool facebook_client::home( )
 		this->logout_hash_ = utils::text::source_get_value( &resp.data, 2, "<input type=\"hidden\" autocomplete=\"off\" name=\"h\" value=\"", "\"" );
 		parent->Log("      Got self logout hash: %s", this->logout_hash_.c_str());
 			
-
+		// TODO: DIrectly get that friend requests
 		// Get friend requests count and notify it
 		std::string str_count = utils::text::source_get_value( &resp.data, 2, "<span id=\"requestsCountValue\">", "</span>" );
 		if ( str_count.length() && str_count != std::string( "0" ) )
@@ -843,8 +847,6 @@ bool facebook_client::home( )
 				parent->NotifyEvent( parent->m_tszUserName, tmessage, NULL, FACEBOOK_EVENT_OTHER, TEXT(FACEBOOK_URL_MESSAGES) );
 				mir_free( tmessage );
 			}
-		} else { // Parse messages directly for contacts
-			ForkThread( &FacebookProto::ProcessUnreadMessages, this->parent, NULL );
 		}
 			
 		str_count = utils::text::source_get_value( &resp.data, 2, "<span id=\"notificationsCountValue\">", "</span>" );
@@ -1272,6 +1274,8 @@ void facebook_client::close_chat( std::string message_recipient )
 	data += "&post_form_id_source=AsyncRequest";
 	data += "&fb_dtsg=";
 	data += ( this->dtsg_.length( ) ) ? this->dtsg_ : "0";
+	data += "&__user=";
+	data += self_.user_id;
 	
 	http::response resp = flap( FACEBOOK_REQUEST_TABS, &data );
 }
@@ -1286,7 +1290,8 @@ void facebook_client::chat_mark_read( std::string message_recipient )
 	data += ( post_form_id_.length( ) ) ? post_form_id_ : "0";
 	data += "&fb_dtsg=";
 	data += ( this->dtsg_.length( ) ) ? this->dtsg_ : "0";
-	data += "&post_form_id_source=AsyncRequest&lsd=";
+	data += "&post_form_id_source=AsyncRequest&lsd=&__user=";
+	data += self_.user_id;
 	
 	http::response resp = flap( FACEBOOK_REQUEST_ASYNC, &data );
 }
