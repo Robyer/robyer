@@ -152,24 +152,29 @@ void FacebookProto::DeleteContactFromServer(void *data)
 	// Get unread inbox threads
 	http::response resp = facy.flap( FACEBOOK_REQUEST_DELETE_FRIEND, &query );
 
-	// TODO: do only when operation is successful
-	facebook_user* fbu = facy.buddies.find( id );
-	if (fbu != NULL) {
-		fbu->deleted = true;		
-		// TODO: change type of contact in database...
-		DBWriteContactSettingWord(fbu->handle, m_szModuleName, "Status", ID_STATUS_OFFLINE); // set offline status
-		DBWriteContactSettingDword(fbu->handle, m_szModuleName, FACEBOOK_KEY_DELETED, ::time(NULL)); // set deleted time
-	}
-
 	// Process result data
 	facy.validate_response(&resp);
 
-	if (resp.code != HTTP_CODE_OK) {
-		facy.handle_error( "DeleteContactFromServer" );
+	if (resp.data.find("\"success\":true", 0) != std::string::npos) {
+		
+		// TODO: do only when operation is successful
+		facebook_user* fbu = facy.buddies.find( id );
+		if (fbu != NULL) {
+			fbu->deleted = true;		
+			// TODO: change type of contact in database...
+			DBWriteContactSettingWord(fbu->handle, m_szModuleName, "Status", ID_STATUS_OFFLINE); // set offline status
+			
+			// TODO: if not in actual buddies list, search in database...
+			DBWriteContactSettingDword(fbu->handle, m_szModuleName, FACEBOOK_KEY_DELETED, ::time(NULL)); // set deleted time
+		}
+		
+		NotifyEvent(TranslateT("Deleting contact"), TranslateT("Contact was sucessfully removed from server."), NULL, FACEBOOK_EVENT_OTHER, NULL);		
+	} else {
+		facy.client_notify( TranslateT("Error occured when removing contact from server.") );
 	}
 
-	// TODO: better notify - check result code
-	NotifyEvent(TranslateT("Deleting contact"), TranslateT("Contact was sucessfully removed from server."), NULL, FACEBOOK_EVENT_OTHER, NULL);		
+	if (resp.code != HTTP_CODE_OK)
+		facy.handle_error( "DeleteContactFromServer" );	
 }
 
 void FacebookProto::AddContactToServer(void *data)
@@ -195,20 +200,24 @@ void FacebookProto::AddContactToServer(void *data)
 	// Get unread inbox threads
 	http::response resp = facy.flap( FACEBOOK_REQUEST_ADD_FRIEND, &query );
 
-	// TODO: do only when operation is successful
-	/*facebook_user* fbu = facy.buddies.find( id );
-	if (fbu != NULL) {
-		// TODO: change type of contact in database...
-	}*/
-
 	// Process result data
 	facy.validate_response(&resp);
 
-	if (resp.code != HTTP_CODE_OK || resp.data.find("\"success\":true") == std::string::npos) {
-		facy.handle_error( "AddContactToServer" );
+	if (resp.data.find("\"success\":true", 0) != std::string::npos) {
+		/*facebook_user* fbu = facy.buddies.find( id );
+		if (fbu != NULL) {
+			// TODO: change type of contact in database...
+			// TODO: if not in actual buddies list, search in database...
+		}*/			
+		
+		NotifyEvent(TranslateT("Adding contact"), TranslateT("Request for friendship was sent successfully."), NULL, FACEBOOK_EVENT_OTHER, NULL);
+	} else {
+		facy.client_notify( TranslateT("Error occured when requesting friendship.") );
 	}
-// RM TODO: better notify... - check result code
-	NotifyEvent(TranslateT("Adding contact"), TranslateT("Request for friendship was sent successfully."), NULL, FACEBOOK_EVENT_OTHER, NULL);
+
+	if (resp.code != HTTP_CODE_OK)
+		facy.handle_error( "AddContactToServer" );
+
 }
 
 
