@@ -220,7 +220,6 @@ DWORD facebook_client::choose_security_level( int request_type )
 //	case FACEBOOK_REQUEST_LOGOUT:
 //	case FACEBOOK_REQUEST_HOME:
 //	case FACEBOOK_REQUEST_BUDDY_LIST:
-//	case FACEBOOK_REQUEST_FACEPILES:
 //	case FACEBOOK_REQUEST_LOAD_FRIENDS:
 //  case FACEBOOK_REQUEST_DELETE_FRIEND:
 //	case FACEBOOK_REQUEST_ADD_FRIEND:
@@ -246,7 +245,6 @@ int facebook_client::choose_method( int request_type )
 	case FACEBOOK_REQUEST_LOGIN:
 	case FACEBOOK_REQUEST_SETUP_MACHINE:
 	case FACEBOOK_REQUEST_BUDDY_LIST:
-	case FACEBOOK_REQUEST_FACEPILES:
 	case FACEBOOK_REQUEST_STATUS_SET:
 	case FACEBOOK_REQUEST_MESSAGE_SEND:
 	case FACEBOOK_REQUEST_VISIBILITY:
@@ -285,7 +283,6 @@ std::string facebook_client::choose_proto( int request_type )
 //	case FACEBOOK_REQUEST_NOTIFICATIONS:
 //	case FACEBOOK_REQUEST_RECONNECT:
 //	case FACEBOOK_REQUEST_BUDDY_LIST:
-//	case FACEBOOK_REQUEST_FACEPILES:
 //	case FACEBOOK_REQUEST_LOAD_FRIENDS:
 //	case FACEBOOK_REQUEST_STATUS_SET:
 //	case FACEBOOK_REQUEST_MESSAGE_SEND:
@@ -326,7 +323,6 @@ std::string facebook_client::choose_server( int request_type, std::string* data,
 //	case FACEBOOK_REQUEST_LOGOUT:
 //	case FACEBOOK_REQUEST_HOME:
 //	case FACEBOOK_REQUEST_BUDDY_LIST:
-//	case FACEBOOK_REQUEST_FACEPILES:
 //	case FACEBOOK_REQUEST_LOAD_FRIENDS:
 //	case FACEBOOK_REQUEST_FEEDS:
 //	case FACEBOOK_REQUEST_NOTIFICATIONS:
@@ -363,9 +359,6 @@ std::string facebook_client::choose_action( int request_type, std::string* data,
 
 	case FACEBOOK_REQUEST_BUDDY_LIST:
 		return "/ajax/chat/buddy_list.php?__a=1";
-
-	case FACEBOOK_REQUEST_FACEPILES:
-		return "/ajax/groups/chat/update_facepiles.php?__a=1";
 
 	case FACEBOOK_REQUEST_LOAD_FRIENDS:
 	{
@@ -475,7 +468,6 @@ NETLIBHTTPHEADER* facebook_client::get_request_headers( int request_type, int* h
 	case FACEBOOK_REQUEST_LOGIN:
 	case FACEBOOK_REQUEST_SETUP_MACHINE:
 	case FACEBOOK_REQUEST_BUDDY_LIST:
-	case FACEBOOK_REQUEST_FACEPILES:
 	case FACEBOOK_REQUEST_LOAD_FRIENDS:
 	case FACEBOOK_REQUEST_STATUS_SET:
 	case FACEBOOK_REQUEST_MESSAGE_SEND:
@@ -505,7 +497,6 @@ NETLIBHTTPHEADER* facebook_client::get_request_headers( int request_type, int* h
 	case FACEBOOK_REQUEST_LOGIN:
 	case FACEBOOK_REQUEST_SETUP_MACHINE:
 	case FACEBOOK_REQUEST_BUDDY_LIST:
-	case FACEBOOK_REQUEST_FACEPILES:
 	case FACEBOOK_REQUEST_LOAD_FRIENDS:
 	case FACEBOOK_REQUEST_STATUS_SET:
 	case FACEBOOK_REQUEST_MESSAGE_SEND:
@@ -979,51 +970,6 @@ bool facebook_client::buddy_list( )
 	default:
 		return handle_error( "buddy_list" );
 	}
-}
-
-bool facebook_client::facepiles( )
-{	
-	handle_entry( "facepiles" );
-
-	int count = (int)CallServiceSync(MS_GC_GETSESSIONCOUNT, 0, (LPARAM)parent->m_szModuleName);
-	for ( int i = 0; i < count; i++ ) {
-		GC_INFO gci = {0};
-		gci.Flags = BYINDEX | TYPE | ID;
-		gci.iItem = i;
-		gci.pszModule = parent->m_szModuleName;
-		if ( !CallServiceSync( MS_GC_GETINFO, 0, (LPARAM)&gci ) && gci.iType == GCW_CHATROOM ) {
-			char *id = mir_t2a(gci.pszID);
-
-			// Prepare data
-			std::string data = "id=";
-			data += id;
-			data += "&post_form_id=" + this->post_form_id_ + "&fb_dtsg=" + this->dtsg_ + "&lsd=&post_form_id_source=AsyncRequest&__user=" + this->self_.user_id + "&phstamp=0";
-
-			// Get facepiles
-			http::response resp = flap( FACEBOOK_REQUEST_FACEPILES, &data );
-
-			// Process result data
-			validate_response(&resp);
-
-			std::string chat_id = id;
-			mir_free(id);
-			
-			switch ( resp.code )
-			{
-			case HTTP_CODE_OK:
-				ForkThread( &FacebookProto::ProcessFacepiles, this->parent, new send_chat(chat_id, resp.data) );
-				break;
-
-			case HTTP_CODE_FAKE_ERROR:
-			case HTTP_CODE_FAKE_DISCONNECTED:
-			default:
-				return handle_error( "facepiles" );
-			}
-			
-		}			
-	}
-
-	return handle_success( "facepiles" );
 }
 
 bool facebook_client::load_friends( )

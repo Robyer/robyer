@@ -126,7 +126,6 @@ void FacebookProto::ChangeStatus(void*)
 
 	facy.chat_state( m_iDesiredStatus != ID_STATUS_INVISIBLE );	
 	facy.buddy_list( );
-	//facy.facepiles( );
 
 	m_iStatus = facy.self_.status_id = m_iDesiredStatus;
 	ProtoBroadcastAck(m_szModuleName, 0, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE)old_status, m_iStatus);
@@ -195,9 +194,6 @@ void FacebookProto::UpdateLoop(void *)
 			if ( !facy.invisible_ )
 				if ( !facy.buddy_list( ) )
     				break;
-/*			if ( getByte( FACEBOOK_KEY_ENABLE_GROUPCHATS, DEFAULT_ENABLE_GROUPCHATS) )
-				if ( !facy.facepiles( ) )
-					break;*/
 		}
 		if ( i == 2 && getByte( FACEBOOK_KEY_EVENT_FEEDS_ENABLE, DEFAULT_EVENT_FEEDS_ENABLE ) )
 			if ( !facy.feeds( ) )

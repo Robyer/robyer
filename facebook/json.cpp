@@ -140,83 +140,6 @@ int facebook_json_parser::parse_buddy_list( void* data, List::List< facebook_use
 	return EXIT_SUCCESS;
 }
 
-int facebook_json_parser::parse_facepiles( void* data, std::map< std::string, std::string > *facepiles )
-{
-	using namespace json;
-
-	try
-	{
-		std::string buddyData = static_cast< std::string* >( data )->substr( 9 );
-		std::istringstream sDocument( buddyData );
-		Object objDocument;
-		Reader::Read(objDocument, sDocument);
-		std::map< std::string, std::string >::iterator it;
-
-		const Object& objRoot = objDocument;
-/*		const Array& infos = objRoot["payload"]["facepile_click_info"];
-
-		for ( Array::const_iterator info( infos.Begin() );
-			info != infos.End(); ++info)
-		{
-			const Object& objMember = *info;
-
-			if (objMember.Find("uid") != objMember.End()) {
-				const Number& id = objMember["uid"];
-				char was_id[32];
-				lltoa( id.Value(), was_id, 10 );
-
-				const String& name = objMember["name"];
-				std::string user_name = utils::text::slashu_to_utf8(
-					utils::text::special_expressions_decode( name.Value() ) );
-				
-				it = facepiles->find( std::string( was_id ) );
-				if ( it == facepiles->end() ) {
-					facepiles->insert( std::make_pair( was_id, user_name ) );
-				}
-			}
-		} */
-
-		// Contacts in chat are getting by parsing html response. Don't know if it will work also for many people in chat room.
-		const String& response_html = objRoot["payload"]["response_html"];
-		std::string contacts = utils::text::slashu_to_utf8( utils::text::special_expressions_decode( response_html.Value( ) ) );
-
-		std::string::size_type pos = 0;
-		while ((pos = contacts.find("<li", pos)) != std::string::npos) {
-			std::string row = contacts.substr(pos, contacts.find("</li>") - pos);
-
-			std::string status = utils::text::source_get_value2( &row, "chat", "\" " ); // "Online" or "Idle"
-			std::string name = utils::text::source_get_value( &row, 2, "title=\"", "\"" );
-			std::string id = utils::text::source_get_value( &row, 3, "href=\"", "/profile.php?id=", "\"" );
-			if (id.empty())
-				id = utils::text::source_get_value( &row, 3, "href=\"", "facebook.com/", "\"" );
-
-			it = facepiles->find( id );
-			if ( it == facepiles->end() ) {
-				facepiles->insert( std::make_pair( id, name ) );
-			}
-
-			pos++;
-		}
-
-	}
-	catch (Reader::ParseException& e)
-	{
-		proto->Log( "!!!!! Caught json::ParseException: %s", e.what() );
-		proto->Log( "      Line/offset: %d/%d", e.m_locTokenBegin.m_nLine + 1, e.m_locTokenBegin.m_nLineOffset + 1 );
-	}
-	catch (const Exception& e)
-	{
-		proto->Log( "!!!!! Caught json::Exception: %s", e.what() );
-	}
-	catch (const std::exception& e)
-	{
-		proto->Log( "!!!!! Caught std::exception: %s", e.what() );
-	}
-
-	return EXIT_SUCCESS;
-}
-
-
 int facebook_json_parser::parse_friends( void* data, std::map< std::string, facebook_user* >* friends )
 {
 	using namespace json;
@@ -380,7 +303,7 @@ int facebook_json_parser::parse_messages( void* data, std::vector< facebook_mess
   					facebook_message* message = new facebook_message( );
 					message->message_text = utils::text::special_expressions_decode(
 						utils::text::slashu_to_utf8( text.Value( ) ) );
-					message->time = ::time( NULL );
+					message->time = ::time( NULL ); // TODO: use real time from facebook
 					message->user_id = was_id;
 
 					messages->push_back( message );
@@ -428,7 +351,7 @@ int facebook_json_parser::parse_messages( void* data, std::vector< facebook_mess
 						message->sender_name = utils::text::special_expressions_decode(
 							utils::text::slashu_to_utf8( sender_name.Value( ) ) );
 
-						message->time = ::time( NULL );						
+						message->time = ::time( NULL ); // TODO: user real time from facebook
 						message->user_id = was_id; // TODO: Check if we have contact with this ID in friendlist and then do something different?
 
 						if (row.find("uiSplitPic",0) != std::string::npos) {
