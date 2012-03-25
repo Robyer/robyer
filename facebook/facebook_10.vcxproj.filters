@@ -123,7 +123,7 @@
       <Filter>Resource Files</Filter>
     </ClInclude>
     <ClInclude Include="theme.h">
-      <Filter>Source Files</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
