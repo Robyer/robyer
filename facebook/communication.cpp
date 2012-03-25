@@ -111,6 +111,9 @@ http::response facebook_client::flap( const int request_type, std::string* reque
 	    // is compaired in all communication requests
 	}
 
+	if (DBGetContactSettingByte( NULL, parent->m_szModuleName, FACEBOOK_KEY_VALIDATE_RESPONSE, 0 ) == 1)
+		validate_response(&resp);
+
 	return resp;
 }
 
@@ -122,7 +125,13 @@ bool facebook_client::validate_response( http::response* resp )
 		return false;
 	}
 
-/*	std::string cookie = utils::text::source_get_value(&resp->data, 2, "setCookie(\\\"", ");");	
+	if (DBGetContactSettingByte( NULL, parent->m_szModuleName, FACEBOOK_KEY_VALIDATE_RESPONSE, 0 ) == 2) {
+		return true;
+	}
+
+/*	
+	// TODO: Is this from jarvis? Or me? Add it?
+	std::string cookie = utils::text::source_get_value(&resp->data, 2, "setCookie(\\\"", ");");	
 	if (!cookie.empty()) {
 		std::string cookie_name = utils::text::source_get_value(&cookie, 1, "\\\"");
 		std::string cookie_value = utils::text::source_get_value(&cookie, 3, "\\\"", "\\\"", "\\\"");
