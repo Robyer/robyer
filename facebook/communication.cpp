@@ -233,7 +233,6 @@ DWORD facebook_client::choose_security_level( int request_type )
 //	case FACEBOOK_REQUEST_VISIBILITY:
 //	case FACEBOOK_REQUEST_TABS:
 //	case FACEBOOK_REQUEST_ASYNC:
-//	case FACEBOOK_REQUEST_UNREAD:
 //	case FACEBOOK_REQUEST_TYPING_SEND:
 	default:
 		return ( DWORD )0;
@@ -253,7 +252,6 @@ int facebook_client::choose_method( int request_type )
 	case FACEBOOK_REQUEST_VISIBILITY:
 	case FACEBOOK_REQUEST_TABS:
 	case FACEBOOK_REQUEST_ASYNC:
-	case FACEBOOK_REQUEST_UNREAD:
 	case FACEBOOK_REQUEST_TYPING_SEND:
 	case FACEBOOK_REQUEST_LOGOUT:
 	case FACEBOOK_REQUEST_DELETE_FRIEND:
@@ -295,7 +293,6 @@ std::string facebook_client::choose_proto( int request_type )
 //	case FACEBOOK_REQUEST_VISIBILITY:
 //	case FACEBOOK_REQUEST_TABS:
 //	case FACEBOOK_REQUEST_ASYNC:
-//	case FACEBOOK_REQUEST_UNREAD:
 //	case FACEBOOK_REQUEST_TYPING_SEND:
 //  case FACEBOOK_REQUEST_DELETE_FRIEND:
 //	case FACEBOOK_REQUEST_ADD_FRIEND:
@@ -339,7 +336,6 @@ std::string facebook_client::choose_server( int request_type, std::string* data,
 //	case FACEBOOK_REQUEST_VISIBILITY:
 //	case FACEBOOK_REQUEST_TABS:
 //	case FACEBOOK_REQUEST_ASYNC:
-//	case FACEBOOK_REQUEST_UNREAD:
 //	case FACEBOOK_REQUEST_TYPING_SEND:
 //	case FACEBOOK_REQUEST_SETUP_MACHINE:
 //  case FACEBOOK_REQUEST_DELETE_FRIEND:
@@ -456,9 +452,6 @@ std::string facebook_client::choose_action( int request_type, std::string* data,
 		return action;
 	}
 
-	case FACEBOOK_REQUEST_UNREAD:
-		return "/ajax/mercury/unread_threads.php?__a=1";
-
 	case FACEBOOK_REQUEST_TYPING_SEND:
 		return "/ajax/messaging/typ.php?__a=1";
 
@@ -489,7 +482,6 @@ NETLIBHTTPHEADER* facebook_client::get_request_headers( int request_type, int* h
 	case FACEBOOK_REQUEST_VISIBILITY:
 	case FACEBOOK_REQUEST_TABS:
 	case FACEBOOK_REQUEST_ASYNC:
-	case FACEBOOK_REQUEST_UNREAD:
 	case FACEBOOK_REQUEST_TYPING_SEND:
 	case FACEBOOK_REQUEST_DELETE_FRIEND:
 	case FACEBOOK_REQUEST_ADD_FRIEND:
@@ -520,7 +512,6 @@ NETLIBHTTPHEADER* facebook_client::get_request_headers( int request_type, int* h
 	case FACEBOOK_REQUEST_VISIBILITY:
 	case FACEBOOK_REQUEST_TABS:
 	case FACEBOOK_REQUEST_ASYNC:
-	case FACEBOOK_REQUEST_UNREAD:
 	case FACEBOOK_REQUEST_TYPING_SEND:
 	case FACEBOOK_REQUEST_DELETE_FRIEND:
 	case FACEBOOK_REQUEST_ADD_FRIEND:
