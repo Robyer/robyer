@@ -157,11 +157,6 @@ int OmegleProto::SetStatus( int new_status )
 
 	if ( new_status == ID_STATUS_OFFLINE )
 	{
-		m_iStatus = ID_STATUS_CONNECTING;
-
-		ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS, 
-			(HANDLE)old_status,m_iStatus);
-
 		ForkThread( &OmegleProto::SignOff, this );
 	}
 	else
