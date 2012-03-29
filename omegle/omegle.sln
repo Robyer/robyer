@@ -1,9 +1,9 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "omegle", "omegle.vcproj", "{DADE9455-DC28-465A-9604-2CA28052B9FB}"
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "omegle", "omegle.vcxproj", "{DADE9455-DC28-465A-9604-2CA28052B9FB}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "omegle_icons", "omegle_icons.vcproj", "{C5AB34D2-15F5-4CBA-8F42-DB48A4E52910}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "omegle_icons", "omegle_icons.vcxproj", "{C5AB34D2-15F5-4CBA-8F42-DB48A4E52910}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

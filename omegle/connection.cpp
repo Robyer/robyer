@@ -42,7 +42,7 @@ void OmegleProto::SignOn(void*)
 
 	int old_status = m_iStatus;
 
-	if (facy.home()) {
+//	if (facy.home()) {
 		m_iStatus = m_iDesiredStatus;
 		ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS,
 			(HANDLE)old_status,m_iStatus);
@@ -50,7 +50,7 @@ void OmegleProto::SignOn(void*)
 		setDword( "LogonTS", (DWORD)time(NULL) );
 		ClearChat();
 		OnJoinChat(0,false);
-	} else {
+/*	} else {
 		ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_FAILED,
 			(HANDLE)old_status,m_iStatus);
 
@@ -60,7 +60,7 @@ void OmegleProto::SignOn(void*)
 
 		ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS,
 			(HANDLE)old_status,m_iStatus);
-	}
+	}*/
 
 	LOG("***** SignOn complete");
 }

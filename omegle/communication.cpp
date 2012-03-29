@@ -360,6 +360,22 @@ bool Omegle_client::start()
 {
 	handle_entry( "start" );
 
+
+	// Choose random server
+	const char *servers[] = {"bajor", "cardassia", "promenade", "odo-bucket", "quarks"};
+	
+	srand(::time(NULL));
+	this->server_ = servers[rand() % 5];
+	parent->Log("Chosing server %s", this->server_.c_str());
+
+	std::string log = Translate("Chosing server:");
+	log += " " + this->server_;
+
+	parent->UpdateChat(NULL, log.c_str());
+
+
+
+
 	std::string data = "id=";
 	data += this->chat_id_;
 
