@@ -231,7 +231,6 @@ int OmegleProto::OnModulesLoaded(WPARAM wParam,LPARAM lParam)
 	return 0;
 }
 
-
 int OmegleProto::OnOptionsInit(WPARAM wParam,LPARAM lParam)
 {
 	OPTIONSDIALOGPAGE odp = {sizeof(odp)};
@@ -254,4 +253,32 @@ int OmegleProto::OnPreShutdown(WPARAM wParam,LPARAM lParam)
 {
 	SetStatus( ID_STATUS_OFFLINE );
 	return 0;
+}
+
+int OmegleProto::OnContactDeleted(WPARAM wparam,LPARAM)
+{
+	//HANDLE hContact = (HANDLE)wparam;
+
+	ForkThread(&OmegleProto::StopChatWorker, this, NULL);
+	return 0;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+// OTHER
+
+bool OmegleProto::IsMyContact(HANDLE hContact, bool include_chat)
+{
+	const char *proto = reinterpret_cast<char*>( CallService(MS_PROTO_GETCONTACTBASEPROTO,
+		reinterpret_cast<WPARAM>(hContact),0) );
+
+	if( proto && strcmp(m_szModuleName,proto) == 0 )
+	{
+		if( include_chat )
+			return true;
+		else
+			return DBGetContactSettingByte(hContact,m_szModuleName,"ChatRoom",0) == 0;
+	} else {
+		return false;
+	}
 }
