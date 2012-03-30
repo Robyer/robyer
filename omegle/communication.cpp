@@ -299,16 +299,14 @@ bool Omegle_client::start()
 	this->server_ = servers[rand() % 5];
 	parent->Log("Chosing server %s", this->server_.c_str());
 
-	std::string log = Translate("Chosing server:");
-	log += " " + this->server_;
+	std::string log = Translate("Chosing server: ") + this->server_;
 
 	parent->UpdateChat(NULL, log.c_str());
 
 
 
 
-	std::string data = "id=";
-	data += this->chat_id_;
+	std::string data = "id=" + this->chat_id_;
 
 	// Send validation
 	http::response resp = flap( OMEGLE_REQUEST_START, &data );
@@ -351,8 +349,7 @@ bool Omegle_client::stop( )
 
 	handle_entry( "stop" );
 
-	std::string data = "id=";
-	data += this->chat_id_;
+	std::string data = "id=" + this->chat_id_;
 
 	http::response resp = flap( OMEGLE_REQUEST_STOP, &data );
 
@@ -421,8 +418,7 @@ bool Omegle_client::events( )
 {
 	handle_entry( "events" );
 
-	std::string data = "id=";
-	data += this->chat_id_;
+	std::string data = "id=" + this->chat_id_;
 
 	// Get update
 	http::response resp = flap( OMEGLE_REQUEST_EVENTS, &data );
@@ -529,10 +525,8 @@ bool Omegle_client::send_message( std::string message_text )
 {
 	handle_entry( "send_message" );
 
-	std::string data = "msg=";
-	data += utils::url::encode( message_text );
-	data += "&id=";
-	data += this->chat_id_;
+	std::string data = "msg=" + utils::url::encode( message_text );
+	data += "&id=" + this->chat_id_;
 
 	http::response resp = flap( OMEGLE_REQUEST_SEND, &data );
 
@@ -556,8 +550,7 @@ bool Omegle_client::typing_start()
 {
 	handle_entry( "typing_start" );
 
-	std::string data = "id=";
-	data += this->chat_id_;
+	std::string data = "id=" + this->chat_id_;
 
 	http::response resp = flap( OMEGLE_REQUEST_TYPING_START, &data );
 
@@ -581,8 +574,7 @@ bool Omegle_client::typing_stop()
 {
 	handle_entry( "typing_stop" );
 
-	std::string data = "id=";
-	data += this->chat_id_;
+	std::string data = "id=" + this->chat_id_;
 
 	http::response resp = flap( OMEGLE_REQUEST_TYPING_STOP, &data );
 
