@@ -96,10 +96,9 @@ public:
 	std::string choose_request_url( int, std::string* data = NULL );
 
 	NETLIBHTTPHEADER*   get_request_headers( int request_type, int* headers_count );
-	void    set_header( NETLIBHTTPHEADER* header, char* name );
-	void    refresh_headers( );
 
 	// Netlib handle
+
 	HANDLE handle_;
 
 	void set_handle(HANDLE h)
