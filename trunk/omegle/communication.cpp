@@ -27,7 +27,7 @@ http::response Omegle_client::flap( const int request_type, std::string* request
 	nlhr.requestType = choose_method( request_type );
 	std::string url = choose_request_url( request_type, request_data );
 	nlhr.szUrl = (char*)url.c_str( );
-	nlhr.flags = NLHRF_HTTP11 | NLHRF_NODUMP | NLHRF_GENERATEHOST;
+	nlhr.flags = NLHRF_HTTP11 | /*NLHRF_NODUMP |*/ NLHRF_GENERATEHOST;
 	nlhr.headers = get_request_headers( request_type, &nlhr.headersCount );
 	nlhr.timeout = 1000 * (( request_type == OMEGLE_REQUEST_EVENTS ) ? 60 : 15);
 
