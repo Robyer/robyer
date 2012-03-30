@@ -280,7 +280,7 @@ void Omegle_client::store_headers( http::response* resp, NETLIBHTTPHEADER* heade
 		std::string header_name = headers[i].szName; // TODO: Casting?
 		std::string header_value = headers[i].szValue; // TODO: Casting?
 
-		parent->Log("----- Got header '%s': %s", header_name.c_str(), header_value.c_str() );
+		//parent->Log("----- Got header '%s': %s", header_name.c_str(), header_value.c_str() );
 		resp->headers[header_name] = header_value;
 	}
 }
@@ -365,9 +365,9 @@ bool Omegle_client::stop( )
 	hEventsConnection = NULL;
 
 	if (resp.data == "win") {
-		return handle_success( "logout" );
+		return handle_success( "stop" );
 	} else {
-		return handle_error( "logout" );
+		return handle_error( "stop" );
 	}
 
 /*	switch ( resp.code )
@@ -444,12 +444,35 @@ bool Omegle_client::events( )
 			return handle_error( "events" );
 		}
 		
+		std::string::size_type pos = 0;
+		
 		if ( resp.data.find( "[\"waiting\"]" ) != std::string::npos ) {
 			// We are just waiting for new Stranger
+		}
+		if ( (pos = resp.data.find( "[\"count\"," )) != std::string::npos ) {
+			// We got info about count of connected people there
+			pos += 9;
+
+			std::string count = utils::text::trim(
+				resp.data.substr(pos, resp.data.find("]", pos) - pos) );
+
+			char str[255];
+			mir_snprintf(str, sizeof(str), Translate("There are %s strangers online"), count.c_str());
+			parent->UpdateChat(NULL, str);
 		}
 		if ( resp.data.find( "[\"connected\"]" ) != std::string::npos ) {
 			// Stranger connected
 			parent->AddChatContact(Translate("Stranger"));
+			
+			// Send HI message?
+			DBVARIANT dbv;				
+			if ( !DBGetContactSettingUTF8String( NULL, parent->m_szModuleName, OMEGLE_KEY_HI, &dbv ) ) {
+				std::string *message = new std::string(dbv.pszVal);
+				DBFreeVariant(&dbv);
+
+				parent->Log("**Chat - saying Hi! message");
+				ForkThread(&OmegleProto::SendMsgWorker, parent, (void*)message);
+			}
 		}
 		if ( resp.data.find( "[\"typing\"]" ) != std::string::npos ) {
 			// Stranger is typing
@@ -460,7 +483,7 @@ bool Omegle_client::events( )
 			// TODO: not supported by Group chats right now
 		}
 		
-		std::string::size_type pos = 0;
+		pos = 0;
 		while ( (pos = resp.data.find( "[\"gotMessage\",", pos )) != std::string::npos ) {
 			pos += 16;
 
@@ -474,7 +497,10 @@ bool Omegle_client::events( )
 
 		if ( resp.data.find( "[\"strangerDisconnected\"]" ) != std::string::npos ) {
 			// Stranger disconnected
-			parent->StopChat(false);
+			if (DBGetContactSettingByte(NULL, parent->m_szModuleName, OMEGLE_KEY_DONT_STOP, 0))
+				parent->NewChat();
+			else			
+				parent->StopChat(false);
 		}
 		if ( resp.data.find( "[\"recaptchaRequired\"" ) != std::string::npos ) {
 			// Nothing to do with recaptcha
