@@ -28,13 +28,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define _WIN32_WINNT   0x0500
 #define _WIN32_WINDOWS 0x0500
 
-#include <iostream>
+#include <m_stdhdr.h>
+
 #include <string>
 #include <cstring>
 #include <sstream>
 #include <fstream>
 #include <map>
+#include <stdarg.h>
 #include <time.h>
+#include <assert.h>
 #include <io.h>
 
 #include <windows.h>
@@ -66,16 +69,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 class OmegleProto;
 
-
-#define CODE_BLOCK_BEGIN        {
-#define CODE_BLOCK_TRY          try {
-#define CODE_BLOCK_CATCH        } catch(const std::exception &e) {
-#define CODE_BLOCK_INFINITE     while( true ) {
-#define CODE_BLOCK_END          }
-
-#define FLAG_CONTAINS(x,y)      ( ( x & y ) == y )
-#define REMOVE_FLAG(x,y)        ( x = ( x & ~y ) )
-
 #define LOG Log
 
 #include "http.h"
@@ -84,15 +77,10 @@ class OmegleProto;
 #include "proto.h"
 #include "db.h"
 #include "constants.h"
+#include "dialogs.h"
 #include "theme.h"
 #include "resource.h"
-
-#if defined _DEBUG
-#include <stdlib.h>
-#include <crtdbg.h>
-#endif
 
 extern HINSTANCE g_hInstance;
 extern std::string g_strUserAgent;
 extern DWORD g_mirandaVersion;
-
