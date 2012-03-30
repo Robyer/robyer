@@ -120,7 +120,6 @@ public:
 
 	// Loops
 	void __cdecl EventsLoop(void*);
-	void    KillThreads(bool log = true);
 
 	// Worker threads
 	void __cdecl SignOn(void*);
