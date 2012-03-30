@@ -57,16 +57,9 @@ public:
 	HANDLE send_message_lock_;
 	int	msgid_;
 
-	// Cookies, Data storage
-//	HANDLE cookies_lock_;
-	HANDLE headers_lock_;
-
-//	std::map< std::string, std::string >    cookies;
+	// Data storage
 	std::map< std::string, std::string >    headers;
-
-	//std::string load_cookies( );
 	void    store_headers( http::response* resp, NETLIBHTTPHEADER* headers, int headers_count );
-	//void    clear_cookies( );
 
 	// Connection handling
 	unsigned int error_count_;
@@ -95,7 +88,6 @@ public:
 
 	// HTTP communication
 	http::response  flap( const int request_type, std::string* request_data = NULL );
-	bool    save_url(const std::string &url,const std::string &filename);
 
 	int     choose_method( int );
 	std::string choose_proto( int );
