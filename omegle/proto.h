@@ -153,7 +153,6 @@ public:
 	HANDLE  events_loop_lock_;
 
 	HANDLE  m_hNetlibUser;
-	HANDLE  m_hMsgLoop;
 
 	static void CALLBACK APC_callback(ULONG_PTR p);
 

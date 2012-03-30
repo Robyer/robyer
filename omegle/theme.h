@@ -24,3 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 void InitIcons(void);
 HANDLE GetIconHandle(const char *name);
+
+//void InitContactMenus(void);
+//void UninitContactMenus(void);
+//void ShowContactMenus(bool show, bool deleted = false);

@@ -37,8 +37,6 @@ void OmegleProto::SignOn(void*)
 	ClearChat();
 	OnJoinChat(0,false);
 
-	//ForkThread( &OmegleProto::EventsLoop,  this );
-
 	m_iStatus = m_iDesiredStatus;
 	ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS,(HANDLE)old_status,m_iStatus);
 
@@ -98,6 +96,8 @@ void OmegleProto::StopChat(bool disconnect)
 
 void OmegleProto::NewChat()
 {
+	ScopedLock s(events_loop_lock_);
+	
 	if (facy.connected_)
 	{
 		DeleteChatContact(Translate("Stranger"));
@@ -115,9 +115,7 @@ void OmegleProto::NewChat()
 		else
 			LOG("***** Error in starting connection to stranger %s", facy.chat_id_.c_str());
 	
-	} else {
-		//ScopedLock s(events_loop_lock_);
-
+	} else {		
 		ClearChat();
 		UpdateChat(NULL, Translate("Waiting for Stranger..."), true);
 		
@@ -126,8 +124,7 @@ void OmegleProto::NewChat()
 			facy.connected_ = true;
 			LOG("***** Waiting for stranger %s", facy.chat_id_.c_str());
 
-			m_hMsgLoop = ForkThreadEx( &OmegleProto::EventsLoop, this );
-			LOG("***** Started messageloop thread handle %d", m_hMsgLoop);
+			ForkThread( &OmegleProto::EventsLoop, this );
 		}
 
 	}
@@ -135,7 +132,7 @@ void OmegleProto::NewChat()
 
 void OmegleProto::EventsLoop(void *)
 {
-	//ScopedLock s(events_loop_lock_);
+	ScopedLock s(events_loop_lock_);
 
 	time_t tim = ::time(NULL);
 	LOG( ">>>>> Entering Omegle::EventsLoop[%d]", tim );
