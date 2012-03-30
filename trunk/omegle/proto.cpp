@@ -79,7 +79,6 @@ OmegleProto::OmegleProto(const char* proto_name, const TCHAR* username)
 
 OmegleProto::~OmegleProto( )
 {
-	KillThreads( false );
 	Netlib_CloseHandle( m_hNetlibUser );
 
 	WaitForSingleObject( this->signon_lock_, IGNORE );
@@ -93,6 +92,7 @@ OmegleProto::~OmegleProto( )
 	CloseHandle( this->events_loop_lock_ );
 	CloseHandle( this->facy.connection_lock_ );
 
+	mir_free( m_tszUserName );
 	mir_free( m_szModuleName );
 	mir_free( m_szProtoName );
 }
