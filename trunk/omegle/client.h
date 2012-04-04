@@ -76,7 +76,6 @@ public:
 	void __inline decrement_error( ) { if ( error_count_ > 0 ) error_count_--; }
 	void __inline reset_error( ) { error_count_ = 0; }	
 
-	bool    home( );
 	bool    start( );
 	bool    stop( );
 	bool    events( );
@@ -84,6 +83,8 @@ public:
 	bool    typing_start( );
 	bool    typing_stop( );
 	bool    recaptcha( );
+
+	std::string get_page( int );
 	
 	bool    send_message( std::string message_text );
 
