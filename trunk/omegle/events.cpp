@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 int OmegleProto::Log(const char *fmt,...)
 {
-	if (!getByte("EnableLogging", 0))
+	if (!getByte(OMEGLE_KEY_LOGGING, 0))
 		return EXIT_SUCCESS;
 
 	va_list va;

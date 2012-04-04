@@ -46,3 +46,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define OMEGLE_REQUEST_TYPING_START				310 // started typing
 #define OMEGLE_REQUEST_TYPING_STOP				311 // stoped typing
 #define OMEGLE_REQUEST_RECAPTCHA				400 // recaptcha handling
+
+// Servers list
+static const char *servers[] = {"Random", "bajor", "cardassia", "promenade", "odo-bucket", "ferengi", "quarks"};

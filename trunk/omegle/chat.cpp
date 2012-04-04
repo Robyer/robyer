@@ -101,7 +101,7 @@ int OmegleProto::OnChatOutgoing(WPARAM wParam,LPARAM lParam)
 			text = mir_t2a_cp(hook->ptszText,CP_UTF8);
 			std::string* response_data = new std::string(text);
 
-			LOG("**Chat - Self typing: %s", response_data->c_str());		
+			//LOG("**Chat - Self typing: %s", response_data->c_str());		
 			ForkThread(&OmegleProto::SendTypingWorker, this, (void*)response_data);
 		}
 
@@ -268,6 +268,18 @@ void OmegleProto::SetChatStatus(int status)
 
 	if(status == ID_STATUS_ONLINE)
 	{
+
+		// Load actual name from database
+		DBVARIANT dbv;
+		if ( !DBGetContactSettingUTF8String(NULL, m_szModuleName, OMEGLE_KEY_NAME, &dbv) )
+		{
+			this->facy.nick_ = dbv.pszVal;
+			DBFreeVariant(&dbv);
+		} else {
+			this->facy.nick_ = Translate("You");
+			DBWriteContactSettingUTF8String(NULL, m_szModuleName, OMEGLE_KEY_NAME, facy.nick_.c_str());
+		}
+		
 		// Add self contact
 		AddChatContact(facy.nick_.c_str());
 
