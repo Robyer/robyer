@@ -39,6 +39,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // Omegle request types
 #define OMEGLE_REQUEST_HOME						100 // getting server name
+#define OMEGLE_REQUEST_COUNT					105 // get count of connected users
 #define OMEGLE_REQUEST_START					110 // starting conversation
 #define OMEGLE_REQUEST_STOP						120 // ending conversation
 #define OMEGLE_REQUEST_SEND						300 // sending message

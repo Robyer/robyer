@@ -165,6 +165,7 @@ int Omegle_client::choose_method( int request_type )
 	switch ( request_type )
 	{
 	case OMEGLE_REQUEST_HOME:
+	case OMEGLE_REQUEST_COUNT:
 		return REQUEST_GET;
 	
 /*	case OMEGLE_REQUEST_START:
@@ -193,6 +194,7 @@ std::string Omegle_client::choose_server( int request_type, std::string* data, s
 	case OMEGLE_REQUEST_TYPING_START:
 	case OMEGLE_REQUEST_TYPING_STOP:
 	case OMEGLE_REQUEST_RECAPTCHA:
+	case OMEGLE_REQUEST_COUNT:
 */	default:
 		std::string server = OMEGLE_SERVER_CHAT;
 		utils::text::replace_first( &server, "%s", this->server_ );
@@ -231,6 +233,9 @@ std::string Omegle_client::choose_action( int request_type, std::string* data, s
 	case OMEGLE_REQUEST_RECAPTCHA:
 		return "/recaptcha";
 
+	case OMEGLE_REQUEST_COUNT:
+		return "/count";
+
 	// "/stoplookingforcommonlikes"
 
 /*	case OMEGLE_REQUEST_HOME:
@@ -262,6 +267,7 @@ NETLIBHTTPHEADER* Omegle_client::get_request_headers( int request_type, int* hea
 		break;
 
 	case OMEGLE_REQUEST_HOME:
+	case OMEGLE_REQUEST_COUNT:
 	default:
 		*headers_count = 3;
 		break;
@@ -282,6 +288,7 @@ NETLIBHTTPHEADER* Omegle_client::get_request_headers( int request_type, int* hea
 		headers[3].szValue = "application/x-www-form-urlencoded; charset=utf-8";
 
 	case OMEGLE_REQUEST_HOME:
+	case OMEGLE_REQUEST_COUNT:
 	default:
 		headers[2].szName = "User-Agent";
 		headers[2].szValue = (char *)g_strUserAgent.c_str( );
@@ -374,6 +381,13 @@ bool Omegle_client::start()
 		}
 	}
 
+	std::string count = get_page( OMEGLE_REQUEST_COUNT );
+	if (!count.empty()) {
+		char str[255];
+		mir_snprintf(str, sizeof(str), Translate("Connected to server %s. There are %s users online now."), server_.c_str(), count.c_str());
+		parent->UpdateChat(NULL, str);
+	}
+
 	// Send validation
 	http::response resp = flap( OMEGLE_REQUEST_START, NULL, &data );
 
@@ -443,43 +457,6 @@ bool Omegle_client::stop( )
 	}*/
 }
 
-bool Omegle_client::home( )
-{
-	handle_entry( "home" );
-
-	http::response resp = flap( OMEGLE_REQUEST_HOME );
-
-	// Process result data
-	validate_response(&resp);
-
-	switch ( resp.code )
-	{
-	case HTTP_CODE_OK:
-	{
-		std::string::size_type pos = 0;
-		if ( (pos = resp.data.find( "<frame src=\"http://" )) != std::string::npos )
-		{
-			// Get chat server address
-			pos += 19;
-			this->server_ = resp.data.substr(pos, resp.data.find(".omegle.com", pos) - pos);
-			parent->Log("      Got chat server name: %s", this->server_.c_str());
-
-			return handle_success( "home" );
-		}
-		else
-		{
-			/*client_notify(TranslateT("Something happened to Omegle. Maybe there was some major update so you should wait for an update."));*/
-			return handle_error( "home", FORCE_DISCONNECT );
-		}
-	}
-	case HTTP_CODE_FOUND:
-		return this->home();
-	
-	default:
-		return handle_error( "home", FORCE_DISCONNECT );
-	}
-}
-
 bool Omegle_client::events( )
 {
 	handle_entry( "events" );
@@ -521,7 +498,7 @@ bool Omegle_client::events( )
 			std::string count = utils::text::trim( resp.data.substr(pos, resp.data.find("]", pos) - pos) );
 
 			char str[255];
-			mir_snprintf(str, sizeof(str), Translate("There are %s strangers online. Connected to server %s."), count.c_str(), server_.c_str());
+			mir_snprintf(str, sizeof(str), Translate("On whole Omegle are %s strangers online now."), count.c_str());
 			parent->UpdateChat(NULL, str);
 		}
 
@@ -782,4 +759,25 @@ bool Omegle_client::recaptcha()
 	default:
 		return handle_error( "typing_start" );
 	}
+}
+
+std::string Omegle_client::get_page( const int request_type )
+{
+	handle_entry( "get_page" );
+
+	http::response resp = flap( OMEGLE_REQUEST_COUNT );
+
+	switch ( resp.code )
+	{
+	case HTTP_CODE_OK:
+		handle_success( "get_page" );
+		return resp.data;
+		break;
+
+	case HTTP_CODE_FAKE_ERROR:
+	case HTTP_CODE_FAKE_DISCONNECTED:
+	default:
+		handle_error( "get_page" );
+		return NULL;
+	}	
 }
