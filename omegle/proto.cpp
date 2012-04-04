@@ -64,7 +64,7 @@ OmegleProto::OmegleProto(const char* proto_name, const TCHAR* username)
 
 	SkinAddNewSoundExT( "StrangerIn", m_tszUserName, LPGENT( "Stranger connected" ) );
 	SkinAddNewSoundExT( "StrangerOut", m_tszUserName, LPGENT( "Stranger disconnected" ) );
-	SkinAddNewSoundExT( "MessageIn", m_tszUserName, LPGENT( "Incomming message" ) );
+	SkinAddNewSoundExT( "MessageIn", m_tszUserName, LPGENT( "Incoming message" ) );
 	SkinAddNewSoundExT( "MessageOut", m_tszUserName, LPGENT( "Outgoing message" ) );
 }
 
