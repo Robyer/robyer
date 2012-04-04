@@ -521,7 +521,7 @@ bool Omegle_client::events( )
 			std::string count = utils::text::trim( resp.data.substr(pos, resp.data.find("]", pos) - pos) );
 
 			char str[255];
-			mir_snprintf(str, sizeof(str), Translate("There are %s strangers online"), count.c_str());
+			mir_snprintf(str, sizeof(str), Translate("There are %s strangers online. Connected to server %s."), count.c_str(), server_.c_str());
 			parent->UpdateChat(NULL, str);
 		}
 
