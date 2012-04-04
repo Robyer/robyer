@@ -30,16 +30,6 @@ OmegleProto::OmegleProto(const char* proto_name, const TCHAR* username)
 	m_tszUserName  = mir_tstrdup( username );
 
 	this->facy.parent = this;
-	this->facy.nick_ = Translate("You");
-
-	DBVARIANT dbv;
-	if ( !DBGetContactSettingUTF8String(NULL,m_szModuleName,"Nick",&dbv) )
-	{
-		this->facy.nick_ = dbv.pszVal;
-		DBFreeVariant(&dbv);
-	} else {
-		DBWriteContactSettingUTF8String(NULL,m_szModuleName,"Nick",this->facy.nick_.c_str());
-	}
 
 	this->signon_lock_ = CreateMutex( NULL, FALSE, NULL );
 	this->log_lock_ = CreateMutex( NULL, FALSE, NULL );
