@@ -96,19 +96,6 @@ http::response Omegle_client::flap( const int request_type, std::string* request
 	return resp;
 }
 
-void Omegle_client::validate_response( http::response* resp )
-{
-	if ( resp->code == HTTP_CODE_FAKE_DISCONNECTED )
-	{
-		parent->Log(" ! !  Request has timed out, connection or server error");
-		return;
-	}
-
-	if (resp->data == "fail") {
-//
-	}
-}
-
 bool Omegle_client::handle_entry( std::string method )
 {
 	parent->Log("   >> Entering %s()", method.c_str());
@@ -391,9 +378,6 @@ bool Omegle_client::start()
 	// Send validation
 	http::response resp = flap( OMEGLE_REQUEST_START, NULL, &data );
 
-	// Process result data
-	validate_response(&resp);
-
 	switch ( resp.code )
 	{
 	case HTTP_CODE_FAKE_DISCONNECTED:
@@ -465,9 +449,6 @@ bool Omegle_client::events( )
 
 	// Get update
 	http::response resp = flap( OMEGLE_REQUEST_EVENTS, &data );
-
-	// Process result data
-	validate_response(&resp);	
 
 	// Return
 	switch ( resp.code )
@@ -670,8 +651,6 @@ bool Omegle_client::send_message( std::string message_text )
 
 	http::response resp = flap( OMEGLE_REQUEST_SEND, &data );
 
-	validate_response(&resp);
-
 	switch ( resp.code )
 	{
 	case HTTP_CODE_OK:
@@ -694,8 +673,6 @@ bool Omegle_client::typing_start()
 
 	http::response resp = flap( OMEGLE_REQUEST_TYPING_START, &data );
 
-	validate_response(&resp);
-
 	switch ( resp.code )
 	{
 	case HTTP_CODE_OK:
@@ -717,8 +694,6 @@ bool Omegle_client::typing_stop()
 	std::string data = "id=" + this->chat_id_;
 
 	http::response resp = flap( OMEGLE_REQUEST_TYPING_STOP, &data );
-
-	validate_response(&resp);
 
 	switch ( resp.code )
 	{
@@ -744,8 +719,6 @@ bool Omegle_client::recaptcha()
 	//std::string data = "?id=...&challenge= ..., &response= ...";
 
 	http::response resp = flap( OMEGLE_REQUEST_RECAPTCHA );
-
-	validate_response(&resp);
 
 	switch ( resp.code )
 	{
