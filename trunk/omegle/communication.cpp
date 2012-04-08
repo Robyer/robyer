@@ -393,7 +393,7 @@ bool Omegle_client::start()
 	{ 
 		if (!resp.data.empty()) {
 			this->chat_id_ = resp.data.substr(1,resp.data.length()-2);
-			this->connected_ = true;
+			this->state_ = STATE_ACTIVE;
 
 			return handle_success( "start" );
 		} else {

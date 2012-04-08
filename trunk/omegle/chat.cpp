@@ -74,7 +74,7 @@ int OmegleProto::OnChatOutgoing(WPARAM wParam,LPARAM lParam)
 		else if (*response_data == "/quit")
 			ForkThread(&OmegleProto::StopChatWorker, this, NULL);
 		else {
-			if ( facy.connected_ ) {
+			if ( facy.state_ == STATE_ACTIVE ) {
 
 				DBVARIANT dbv;
 				if (*response_data == "/asl") {
@@ -97,7 +97,7 @@ int OmegleProto::OnChatOutgoing(WPARAM wParam,LPARAM lParam)
 
 	case GC_USER_TYPNOTIFY:
 	{
-		if ( facy.connected_ ) {
+		if ( facy.state_ == STATE_ACTIVE ) {
 			text = mir_t2a_cp(hook->ptszText,CP_UTF8);
 			std::string* response_data = new std::string(text);
 
