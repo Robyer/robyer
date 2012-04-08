@@ -66,8 +66,6 @@ public:
 	// Connection handling
 	unsigned int error_count_;
 
-	void	validate_response( http::response* );
-
 	bool    handle_entry( std::string method );
 	bool    handle_success( std::string method );
 	bool    handle_error( std::string method, bool force_disconnect = false );
