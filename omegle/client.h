@@ -24,6 +24,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define FORCE_DISCONNECT true
 
+#define STATE_INACTIVE			0	// not connected to any stranger
+#define STATE_WAITING			1	// connecting to stranger
+#define STATE_ACTIVE			2	// active discussion
+#define STATE_SWITCHING			3	// changing stranger // needed? not usable STATE_WAITING?
+#define STATE_DISCONNECTING		4	// disconnecting from stranger
+
 class Omegle_client
 {
 public:
@@ -32,9 +38,9 @@ public:
 	Omegle_client( )
 	{
 		chat_id_ = server_ = nick_ = "";
-		connected_ = false;
 		send_message_lock_ = NULL;
 		msgid_ = 0;
+		state_ = STATE_INACTIVE;
 
 		hConnection = NULL;
 		hEventsConnection = NULL;
@@ -52,7 +58,7 @@ public:
 	std::string chat_id_;
 	std::string server_;
 	std::string nick_;
-	bool connected_;
+	int state_;
 
 	HANDLE send_message_lock_;
 	int	msgid_;
