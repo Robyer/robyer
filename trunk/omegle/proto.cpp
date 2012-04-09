@@ -44,7 +44,7 @@ OmegleProto::OmegleProto(const char* proto_name, const TCHAR* username)
 	CreateProtoService(m_szModuleName, PS_GETNAME, &OmegleProto::GetName, this);
 	
 	HookProtoEvent(ME_OPT_INITIALISE, &OmegleProto::OnOptionsInit, this);
-	HookProtoEvent(ME_GC_EVENT, &OmegleProto::OnChatOutgoing, this);
+	HookProtoEvent(ME_GC_EVENT, &OmegleProto::OnChatEvent, this);
 
 	// Create standard network connection
 	TCHAR descr[512];
@@ -83,9 +83,11 @@ OmegleProto::~OmegleProto( )
 	CloseHandle( this->events_loop_lock_ );
 	CloseHandle( this->facy.connection_lock_ );
 
+	mir_free( this->facy.nick_ );
+
 	mir_free( m_tszUserName );
 	mir_free( m_szModuleName );
-	mir_free( m_szProtoName );
+	mir_free( m_szProtoName );	
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -257,7 +259,7 @@ int OmegleProto::OnContactDeleted(WPARAM wparam,LPARAM)
 //////////////////////////////////////////////////////////////////////////////
 // OTHER
 
-bool OmegleProto::IsMyContact(HANDLE hContact, bool include_chat)
+/*bool OmegleProto::IsMyContact(HANDLE hContact, bool include_chat)
 {
 	const char *proto = reinterpret_cast<char*>( CallService(MS_PROTO_GETCONTACTBASEPROTO,
 		reinterpret_cast<WPARAM>(hContact),0) );
@@ -271,4 +273,4 @@ bool OmegleProto::IsMyContact(HANDLE hContact, bool include_chat)
 	} else {
 		return false;
 	}
-}
+}*/

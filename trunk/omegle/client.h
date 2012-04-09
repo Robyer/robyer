@@ -36,7 +36,8 @@ public:
 	// Client definition
 	Omegle_client( )
 	{
-		chat_id_ = server_ = nick_ = "";
+		chat_id_ = server_ = "";
+		nick_ = NULL;
 		send_message_lock_ = NULL;
 		//msgid_ = 0;
 		state_ = STATE_INACTIVE;
@@ -57,11 +58,13 @@ public:
 	// Chat data
 	std::string chat_id_;
 	std::string server_;
-	std::string nick_;
-	int state_;
+	TCHAR *nick_;
 
 	HANDLE send_message_lock_;
 	//int	msgid_;
+	
+	// State of client
+	int state_;
 
 	// Data storage
 	std::map< std::string, std::string >    headers;

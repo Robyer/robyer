@@ -166,3 +166,8 @@ HANDLE OmegleProto::GetAwayMsg( HANDLE hContact )
 {
 	return 0;
 }
+
+int OmegleProto::RecvMsg(HANDLE hContact, PROTORECVEVENT *pre)
+{
+	return 0;
+}

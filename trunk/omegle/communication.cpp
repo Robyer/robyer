@@ -125,8 +125,6 @@ bool Omegle_client::handle_error( std::string method, bool force_disconnect )
 	if ( result == false )
 	{
 		reset_error();		
-		//parent->SetStatus(ID_STATUS_OFFLINE);
-		//parent->OnLeaveChat(NULL, NULL);
 		parent->StopChat(false);
 	}
 
@@ -374,7 +372,10 @@ bool Omegle_client::start()
 	if (!count.empty()) {
 		char str[255];
 		mir_snprintf(str, sizeof(str), Translate("Connected to server %s. There are %s users online now."), server_.c_str(), count.c_str());
-		parent->UpdateChat(NULL, str);
+				
+		TCHAR *msg = mir_a2t_cp(str,CP_UTF8);
+		parent->UpdateChat(NULL, msg);
+		mir_free(msg);
 	}
 
 	// Send validation
@@ -460,7 +461,7 @@ bool Omegle_client::events( )
 		if ( resp.data == "null" ) {
 			// Everything is OK, no new message received
 			if (null_count_++ > OMEGLE_NULLS_LIMIT) {
-				parent->UpdateChat(NULL, "Connection error.");
+				parent->UpdateChat(NULL, TranslateT("Connection error."));
 				return handle_error( "events", FORCE_DISCONNECT );
 			} else {
 				return handle_success( "events" );
@@ -489,12 +490,15 @@ bool Omegle_client::events( )
 
 			char str[255];
 			mir_snprintf(str, sizeof(str), Translate("On whole Omegle are %s strangers online now."), count.c_str());
-			parent->UpdateChat(NULL, str);
+			
+			TCHAR *msg = mir_a2t_cp(str,CP_UTF8);
+			parent->UpdateChat(NULL, msg);
+			mir_free(msg);
 		}
 
 		if ( resp.data.find( "[\"connected\"]" ) != std::string::npos ) {
 			// Stranger connected
-			parent->AddChatContact(Translate("Stranger"));
+			parent->AddChatContact(TranslateT("Stranger"));
 			this->state_ = STATE_ACTIVE;
 			newStranger = true;
 			waiting = false;
@@ -508,7 +512,10 @@ bool Omegle_client::events( )
 			parent->Log("Got common likes: '%s'", like.c_str());
 
 			like = Translate("You and the Stranger both like: ") + like;
-			parent->UpdateChat(NULL, like.c_str());
+
+			TCHAR *msg = mir_a2t_cp(like.c_str(),CP_UTF8);
+			parent->UpdateChat(NULL, msg);
+			mir_free(msg);
 		}
 
 		if ( (pos = resp.data.find( "[\"question\"," )) != std::string::npos ) {
@@ -518,10 +525,12 @@ bool Omegle_client::events( )
 				utils::text::special_expressions_decode(
 					utils::text::slashu_to_utf8(
 						resp.data.substr(pos, resp.data.find("\"]", pos) - pos)	) ) );
-			
+
 			question = Translate("Question to discuss: ") + question;
 
-			parent->UpdateChat(NULL, question.c_str());
+			TCHAR *msg = mir_a2t_cp(question.c_str(),CP_UTF8);
+			parent->UpdateChat(NULL, msg);
+			mir_free(msg);
 		}
 
 		if ( resp.data.find( "[\"typing\"]" ) != std::string::npos ) {
@@ -583,8 +592,13 @@ bool Omegle_client::events( )
 					utils::text::slashu_to_utf8(
 						resp.data.substr(pos, resp.data.find("\"]", pos) - pos)	) ) );
 			
-			if (state_ == STATE_ACTIVE)
-				parent->UpdateChat(Translate("Stranger"), message.c_str());
+			if (state_ == STATE_ACTIVE) {
+				//parent->UpdateChat(Translate("Stranger"), message.c_str());
+
+				TCHAR *msg = mir_a2t_cp(message.c_str(),CP_UTF8);
+				parent->UpdateChat(TranslateT("Stranger"), msg);
+				mir_free(msg);
+			}
 		}
 
 		if ( resp.data.find( "[\"strangerDisconnected\"]" ) != std::string::npos ) {
@@ -597,7 +611,7 @@ bool Omegle_client::events( )
 
 		if ( resp.data.find( "[\"recaptchaRequired\"" ) != std::string::npos ) {
 			// Nothing to do with recaptcha
-			parent->UpdateChat(NULL, Translate("Recaptcha is required.\nOpen Omegle chat in webbrowser, solve Recaptcha and try again."));
+			parent->UpdateChat(NULL, TranslateT("Recaptcha is required.\nOpen Omegle chat in webbrowser, solve Recaptcha and try again."));
 			parent->StopChat(false);
 		}
 
@@ -615,8 +629,11 @@ bool Omegle_client::events( )
 					utils::text::slashu_to_utf8(
 						resp.data.substr(pos, resp.data.find("\"]", pos) - pos)	) ) );
 
-			error = Translate("Error: ") + error; 
-			parent->UpdateChat(NULL, error.c_str());
+			error = Translate("Error: ") + error;
+
+			TCHAR *msg = mir_a2t_cp(error.c_str(),CP_UTF8);
+			parent->UpdateChat(NULL, msg);
+			mir_free(msg);
 		}
 				
 		if (newStranger) {
@@ -637,7 +654,7 @@ bool Omegle_client::events( )
 
 		if (waiting) {
 			// If we are only waiting in this event...
-			parent->UpdateChat(NULL, Translate("We are still waiting..."));
+			parent->UpdateChat(NULL, TranslateT("We are still waiting..."));
 		}
 
 		return handle_success( "events" );

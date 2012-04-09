@@ -22,11 +22,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "common.h"
 
-int OmegleProto::RecvMsg(HANDLE hContact, PROTORECVEVENT *pre)
-{
-	return 0;
-}
-
 void OmegleProto::SendMsgWorker(void *p)
 {
 	if(p == NULL)
@@ -40,7 +35,9 @@ void OmegleProto::SendMsgWorker(void *p)
 
 	if (facy.state_ == STATE_ACTIVE && data->length() && facy.send_message( *data ))
 	{
-		UpdateChat(facy.nick_.c_str(), data->c_str());
+		TCHAR *msg = mir_a2t_cp(data->c_str(), CP_UTF8);
+		UpdateChat(facy.nick_, msg);
+		mir_free(msg);
 	}
 
 	delete data;
@@ -51,15 +48,14 @@ void OmegleProto::SendTypingWorker(void *p)
 	if (p == NULL)
 		return;
 
-	std::string *data = static_cast<std::string*>(p);
+	TCHAR *typ = static_cast<TCHAR*>(p);
 
-	bool typ = (*data == "1");
-	delete data;
-	
-	if (typ)
+	if (!_tcscmp(typ, _T("1")))
 		facy.typing_start();
 	else
 		facy.typing_stop();
+
+	mir_free(typ);
 }
 
 void OmegleProto::NewChatWorker(void*p)
