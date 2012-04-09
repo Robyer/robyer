@@ -249,7 +249,7 @@ int OmegleProto::OnContactDeleted(WPARAM wparam,LPARAM)
 {
 	//HANDLE hContact = (HANDLE)wparam;
 
-	ForkThread(&OmegleProto::StopChatWorker, this, NULL);
+	OnLeaveChat(NULL, NULL);
 	return 0;
 }
 

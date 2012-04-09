@@ -50,11 +50,9 @@ void OmegleProto::SignOff(void*)
 
 	Netlib_Shutdown(facy.hEventsConnection);
 
-	StopChat();
-
-	deleteSetting( "LogonTS" );
-
 	OnLeaveChat(NULL, NULL);
+
+	deleteSetting( "LogonTS" );	
 
 	ProtoBroadcastAck(m_szModuleName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS,(HANDLE)old_status,m_iStatus);
 
@@ -67,20 +65,26 @@ void OmegleProto::SignOff(void*)
 }
 
 void OmegleProto::StopChat(bool disconnect)
-{		
-	if (facy.state_ != STATE_ACTIVE)
+{
+	if (facy.state_ == STATE_WAITING) {
+		UpdateChat(NULL, Translate("Connecting canceled."), false);		
+	} else if (facy.state_ == STATE_ACTIVE) {
+		if (disconnect)
+		{
+			facy.state_ = STATE_DISCONNECTING;
+			UpdateChat(NULL, Translate("Disconnecting..."), true);
+
+			if (facy.stop())
+				LOG("***** Disconnected from stranger %s", facy.chat_id_.c_str());
+			else
+				LOG("***** Error in disconnecting from stranger %s", facy.chat_id_.c_str());			
+		}
+
+		DeleteChatContact(Translate("Stranger"));
+	}
+	else
+	{ // disconnecting or inactive
 		return;
-
-	DeleteChatContact(Translate("Stranger"));
-
-	if (disconnect)
-	{
-		UpdateChat(NULL, Translate("Disconnecting..."), true);
-
-		if (facy.stop())
-			LOG("***** Disconnected from stranger %s", facy.chat_id_.c_str());
-		else
-			LOG("***** Error in disconnecting from stranger %s", facy.chat_id_.c_str());
 	}
 
 	facy.state_ = STATE_INACTIVE;
@@ -89,8 +93,13 @@ void OmegleProto::StopChat(bool disconnect)
 
 void OmegleProto::NewChat()
 {
-	if (facy.state_ == STATE_ACTIVE)
+	if (facy.state_ == STATE_WAITING)
 	{
+		UpdateChat(NULL, Translate("We are already waiting for new stranger..."), false);
+		return;
+	}
+	else if (facy.state_ == STATE_ACTIVE)
+	{		
 		UpdateChat(NULL, Translate("Disconnecting..."), true);
 
 		if (facy.stop())
@@ -99,20 +108,41 @@ void OmegleProto::NewChat()
 			LOG("***** Error in disconnecting from stranger %s", facy.chat_id_.c_str());
 
 		DeleteChatContact(Translate("Stranger"));
+		ClearChat();
+		
+		UpdateChat(NULL, Translate("Connecting..."), true);
+
+		facy.state_ = STATE_WAITING;
+
+		if (facy.start())
+		{		
+			UpdateChat(NULL, Translate("Waiting for Stranger..."), true);
+			LOG("***** Waiting for stranger %s", facy.chat_id_.c_str());
+		}
+	}
+	else if (facy.state_ == STATE_DISCONNECTING)
+	{
+		UpdateChat(NULL, Translate("We are disconnecting now, wait..."), false);
+		return;
+	}
+	else
+	{
+		ClearChat();
+		UpdateChat(NULL, Translate("Connecting..."), true);
+
+
+
+		facy.state_ = STATE_WAITING;
+
+		if (facy.start())
+		{		
+			UpdateChat(NULL, Translate("Waiting for Stranger..."), true);
+			LOG("***** Waiting for stranger %s", facy.chat_id_.c_str());
+
+			ForkThread( &OmegleProto::EventsLoop, this );
+		}
 	}
 	
-	ClearChat();
-	UpdateChat(NULL, Translate("Waiting for Stranger..."), true);
-
-	ScopedLock s(events_loop_lock_);
-		
-	if (facy.start())
-	{
-		facy.state_ = STATE_ACTIVE;
-		LOG("***** Waiting for stranger %s", facy.chat_id_.c_str());
-
-		ForkThread( &OmegleProto::EventsLoop, this );
-	}
 }
 
 void OmegleProto::EventsLoop(void *)
@@ -124,7 +154,7 @@ void OmegleProto::EventsLoop(void *)
 
 	while ( facy.events() )
 	{
-		if ( facy.state_ != STATE_ACTIVE || !isOnline() ) // STATE_DISCONNECTING should be here instead of _ACTIVE...
+		if ( facy.state_ == STATE_INACTIVE || facy.state_ == STATE_DISCONNECTING || !isOnline() )
 			break;
 		LOG( "***** OmegleProto::EventsLoop[%d] refreshing...", tim );
 	}

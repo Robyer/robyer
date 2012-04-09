@@ -74,8 +74,10 @@ int OmegleProto::OnChatOutgoing(WPARAM wParam,LPARAM lParam)
 		else if (*response_data == "/quit")
 			ForkThread(&OmegleProto::StopChatWorker, this, NULL);
 		else {
-			if ( facy.state_ == STATE_ACTIVE ) {
-
+			switch (facy.state_)
+			{
+			case STATE_ACTIVE:
+			{
 				DBVARIANT dbv;
 				if (*response_data == "/asl") {
 					*response_data = "";
@@ -87,8 +89,18 @@ int OmegleProto::OnChatOutgoing(WPARAM wParam,LPARAM lParam)
 
 				LOG("**Chat - Outgoing message: %s", response_data->c_str());
 				ForkThread(&OmegleProto::SendMsgWorker, this, (void*)response_data);
-			} else {
+
+				break;
+			}
+
+			case STATE_INACTIVE:
 				UpdateChat(NULL, Translate("First you have to connect to some Stranger by sending '/new' message. You can use this to change actual Stranger during conversation too. Send '/quit' message if you want to end conversation."), false);
+				break;
+
+			//case STATE_WAITING:
+			//case STATE_DISCONNECTING:
+			default:
+				break; // do nothing here
 			}
 		}
 	
@@ -133,7 +145,7 @@ int OmegleProto::OnChatOutgoing(WPARAM wParam,LPARAM lParam)
 }*/
 
 void OmegleProto::AddChatContact(const char *name)
-{
+{	
 	GCDEST gcd = { m_szModuleName };
 	gcd.ptszID = const_cast<TCHAR*>(m_tszUserName);
 	gcd.iType  = GC_EVENT_JOIN;
