@@ -38,7 +38,7 @@ void OmegleProto::SendMsgWorker(void *p)
 
 	*data = utils::text::trim(*data);
 
-	if (data->length() && facy.send_message( *data ))
+	if (facy.state_ == STATE_ACTIVE && data->length() && facy.send_message( *data ))
 	{
 		UpdateChat(facy.nick_.c_str(), data->c_str());
 	}

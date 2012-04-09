@@ -27,8 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define STATE_INACTIVE			0	// not connected to any stranger
 #define STATE_WAITING			1	// connecting to stranger
 #define STATE_ACTIVE			2	// active discussion
-#define STATE_SWITCHING			3	// changing stranger // needed? not usable STATE_WAITING?
-#define STATE_DISCONNECTING		4	// disconnecting from stranger
+#define STATE_DISCONNECTING		3	// disconnecting from stranger
 
 class Omegle_client
 {
@@ -39,8 +38,9 @@ public:
 	{
 		chat_id_ = server_ = nick_ = "";
 		send_message_lock_ = NULL;
-		msgid_ = 0;
+		//msgid_ = 0;
 		state_ = STATE_INACTIVE;
+		null_count_ = 0;
 
 		hConnection = NULL;
 		hEventsConnection = NULL;
@@ -61,7 +61,7 @@ public:
 	int state_;
 
 	HANDLE send_message_lock_;
-	int	msgid_;
+	//int	msgid_;
 
 	// Data storage
 	std::map< std::string, std::string >    headers;
@@ -71,12 +71,13 @@ public:
 
 	// Connection handling
 	unsigned int error_count_;
+	unsigned int null_count_;
 
 	bool    handle_entry( std::string method );
 	bool    handle_success( std::string method );
 	bool    handle_error( std::string method, bool force_disconnect = false );
 
-	void __inline increment_error( ) { this->error_count_++; }
+	void __inline increment_error( ) { error_count_++; }
 	void __inline decrement_error( ) { if ( error_count_ > 0 ) error_count_--; }
 	void __inline reset_error( ) { error_count_ = 0; }	
 

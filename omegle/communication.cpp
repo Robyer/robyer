@@ -29,7 +29,7 @@ http::response Omegle_client::flap( const int request_type, std::string* request
 	nlhr.szUrl = (char*)url.c_str( );
 	nlhr.flags = NLHRF_HTTP11 | /*NLHRF_NODUMP |*/ NLHRF_GENERATEHOST;
 	nlhr.headers = get_request_headers( request_type, &nlhr.headersCount );
-	nlhr.timeout = 1000 * (( request_type == OMEGLE_REQUEST_EVENTS ) ? 60 : 15);
+	nlhr.timeout = 1000 * (( request_type == OMEGLE_REQUEST_EVENTS ) ? 160 : 15);
 
 	if ( request_data != NULL )
 	{
@@ -124,8 +124,10 @@ bool Omegle_client::handle_error( std::string method, bool force_disconnect )
 
 	if ( result == false )
 	{
-		reset_error();
-		parent->SetStatus(ID_STATUS_OFFLINE);
+		reset_error();		
+		//parent->SetStatus(ID_STATUS_OFFLINE);
+		//parent->OnLeaveChat(NULL, NULL);
+		parent->StopChat(false);
 	}
 
 	return result;
@@ -383,9 +385,9 @@ bool Omegle_client::start()
 	case HTTP_CODE_FAKE_DISCONNECTED:
 	{
 		// If is is only timeout error, try login once more
-		if ( handle_error( "start" ) )
+/*		if ( handle_error( "start" ) )  // TODO: try to remove this....
 			return start();
-		else
+		else*/
 			return false;
 	}
 
@@ -393,7 +395,7 @@ bool Omegle_client::start()
 	{ 
 		if (!resp.data.empty()) {
 			this->chat_id_ = resp.data.substr(1,resp.data.length()-2);
-			this->state_ = STATE_ACTIVE;
+			this->state_ = STATE_WAITING;
 
 			return handle_success( "start" );
 		} else {
@@ -457,10 +459,17 @@ bool Omegle_client::events( )
 	{
 		if ( resp.data == "null" ) {
 			// Everything is OK, no new message received
-			return handle_success( "events" );
+			if (null_count_++ > OMEGLE_NULLS_LIMIT) {
+				parent->UpdateChat(NULL, "Connection error.");
+				return handle_error( "events", FORCE_DISCONNECT );
+			} else {
+				return handle_success( "events" );
+			}
 		} else if ( resp.data == "fail" ) {
 			// Something went wrong
 			return handle_error( "events" );
+		} else {
+			null_count_ = 0;
 		}
 		
 		std::string::size_type pos = 0;
@@ -486,6 +495,7 @@ bool Omegle_client::events( )
 		if ( resp.data.find( "[\"connected\"]" ) != std::string::npos ) {
 			// Stranger connected
 			parent->AddChatContact(Translate("Stranger"));
+			this->state_ = STATE_ACTIVE;
 			newStranger = true;
 			waiting = false;
 		}
@@ -558,7 +568,7 @@ bool Omegle_client::events( )
 			// Stranger disconnected
 			if (DBGetContactSettingByte(NULL, parent->m_szModuleName, OMEGLE_KEY_DONT_STOP, 0))
 				parent->NewChat();
-			else			
+			else
 				parent->StopChat(false);
 		}
 
@@ -573,7 +583,8 @@ bool Omegle_client::events( )
 					utils::text::slashu_to_utf8(
 						resp.data.substr(pos, resp.data.find("\"]", pos) - pos)	) ) );
 			
-			parent->UpdateChat(Translate("Stranger"), message.c_str());
+			if (state_ == STATE_ACTIVE)
+				parent->UpdateChat(Translate("Stranger"), message.c_str());
 		}
 
 		if ( resp.data.find( "[\"strangerDisconnected\"]" ) != std::string::npos ) {
@@ -744,13 +755,13 @@ std::string Omegle_client::get_page( const int request_type )
 	{
 	case HTTP_CODE_OK:
 		handle_success( "get_page" );
-		return resp.data;
 		break;
 
 	case HTTP_CODE_FAKE_ERROR:
 	case HTTP_CODE_FAKE_DISCONNECTED:
 	default:
 		handle_error( "get_page" );
-		return NULL;
-	}	
+	}
+
+	return resp.data;
 }
