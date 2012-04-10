@@ -38,10 +38,12 @@ public:
 	{
 		chat_id_ = server_ = "";
 		nick_ = NULL;
-		send_message_lock_ = NULL;
 		//msgid_ = 0;
+		send_message_lock_ = NULL;
 		state_ = STATE_INACTIVE;
 		null_count_ = 0;
+
+		old_typing_ = typing_ = false;
 
 		hConnection = NULL;
 		hEventsConnection = NULL;
@@ -65,6 +67,8 @@ public:
 	
 	// State of client
 	int state_;
+	bool typing_;
+	bool old_typing_;
 
 	// Data storage
 	std::map< std::string, std::string >    headers;
