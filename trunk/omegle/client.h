@@ -42,7 +42,6 @@ public:
 		//msgid_ = 0;
 		send_message_lock_ = NULL;
 		state_ = STATE_INACTIVE;
-		null_count_ = 0;
 
 		old_typing_ = typing_ = spy_mode_ = false;
 
@@ -81,7 +80,6 @@ public:
 
 	// Connection handling
 	unsigned int error_count_;
-	unsigned int null_count_;
 
 	bool    handle_entry( std::string method );
 	bool    handle_success( std::string method );

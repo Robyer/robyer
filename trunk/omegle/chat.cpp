@@ -109,15 +109,15 @@ int OmegleProto::OnChatEvent(WPARAM wParam,LPARAM lParam)
 				} else {
 					UpdateChat(NULL, TranslateT("Your '/asl' setting is empty."), false);
 					break;
-				}				
+				}
 			}
 			else if (!stricmp(command.c_str(), "help"))
 			{
 				UpdateChat(NULL, TranslateT("You can use different commands:\
 \n/new\t - connect to new stranger or reconnect to different stranger\
-\n/quit\t - disconnect from stranger\
+\n/quit\t - disconnect from stranger or stop connecting\
 \n/ask\t - question mode\
-\n/ask <question> - spy mode with own question\
+\n/ask <question> - spy mode with your question\
 \n/asl\t - send your predefined ASL message"), false);
 				break;
 			}
