@@ -32,8 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define OMEGLE_SERVER_CHAT        "http://%s.omegle.com"
 
 // Limits
-#define OMEGLE_TIMEOUTS_LIMIT		5
-#define OMEGLE_NULLS_LIMIT			6
+#define OMEGLE_TIMEOUTS_LIMIT		6
 // There is "no limit" on Omegle, but we should set some wise limit
 #define OMEGLE_MESSAGE_LIMIT		4096
 #define OMEGLE_MESSAGE_LIMIT_TEXT	"4096"

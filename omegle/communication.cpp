@@ -124,7 +124,8 @@ bool Omegle_client::handle_error( std::string method, bool force_disconnect )
 
 	if ( result == false )
 	{
-		reset_error();		
+		reset_error();
+		parent->UpdateChat(NULL, TranslateT("Connection error."));
 		parent->StopChat(false);
 	}
 
@@ -316,6 +317,8 @@ bool Omegle_client::start()
 	std::string data;
 
 	if (this->spy_mode_) {
+		// TODO: select any server BUT Quarks, which doesn't support this (it seems)
+
 		if (this->question_.empty()) {
 			data = "&wantsspy=1";
 		} else {
@@ -370,14 +373,17 @@ bool Omegle_client::start()
 		}
 	}
 
-	std::string count = get_page( OMEGLE_REQUEST_COUNT );
-	if (!count.empty()) {
-		char str[255];
-		mir_snprintf(str, sizeof(str), Translate("Connected to server %s. There are %s users online now."), server_.c_str(), count.c_str());
-				
-		TCHAR *msg = mir_a2t_cp(str,CP_UTF8);
-		parent->UpdateChat(NULL, msg);
-		mir_free(msg);
+	if (DBGetContactSettingByte(NULL, parent->m_szModuleName, OMEGLE_KEY_SERVER_INFO, 0))
+	{
+		std::string count = get_page( OMEGLE_REQUEST_COUNT );
+		if (!count.empty()) {
+			char str[255];
+			mir_snprintf(str, sizeof(str), Translate("Connected to server %s. There are %s users online now."), server_.c_str(), count.c_str());
+
+			TCHAR *msg = mir_a2t_cp(str,CP_UTF8);
+			parent->UpdateChat(NULL, msg);
+			mir_free(msg);
+		}
 	}
 
 	// Send validation
@@ -388,9 +394,9 @@ bool Omegle_client::start()
 	case HTTP_CODE_FAKE_DISCONNECTED:
 	{
 		// If is is only timeout error, try login once more
-/*		if ( handle_error( "start" ) )  // TODO: try to remove this....
+		if ( handle_error( "start" ) )
 			return start();
-		else*/
+		else
 			return false;
 	}
 
@@ -461,20 +467,12 @@ bool Omegle_client::events( )
 	case HTTP_CODE_OK:
 	{
 		if ( resp.data == "null" ) {
-			// Everything is OK, no new message received
-			if (null_count_++ > OMEGLE_NULLS_LIMIT) {
-				parent->UpdateChat(NULL, TranslateT("Connection error."));
-
-
-				return handle_error( "events", FORCE_DISCONNECT );
-			} else {
-				return handle_success( "events" );
-			}
+			// Everything is OK, no new message received -- OR it is a problem
+			// TODO: if we are waiting for Stranger with common likes, then we should try standard Stranger if this takes too long
+			return handle_error( "events" );
 		} else if ( resp.data == "fail" ) {
 			// Something went wrong
 			return handle_error( "events" );
-		} else {
-			null_count_ = 0;
 		}
 		
 		std::string::size_type pos = 0;
@@ -525,7 +523,7 @@ bool Omegle_client::events( )
 			like = Translate("You and the Stranger both like: ") + like;
 
 			TCHAR *msg = mir_a2t_cp(like.c_str(),CP_UTF8);
-			parent->UpdateChat(NULL, msg);
+			parent->SetTopic(msg);
 			mir_free(msg);
 		}
 
@@ -537,77 +535,23 @@ bool Omegle_client::events( )
 					utils::text::slashu_to_utf8(
 						resp.data.substr(pos, resp.data.find("\"]", pos) - pos)	) ) );
 
-			//question = Translate("Question to discuss: ") + question;
-
 			TCHAR *msg = mir_a2t_cp(question.c_str(),CP_UTF8);
-			//parent->UpdateChat(NULL, msg);
 			parent->SetTopic(msg);
 			mir_free(msg);
 		}
 
-		if ( resp.data.find( "[\"typing\"]" ) != std::string::npos ) {
-			// Stranger is typing
-			// TODO: not supported by Group chats right now
-
+		if ( resp.data.find( "[\"typing\"]" ) != std::string::npos
+			|| resp.data.find( "[\"spyTyping\"," ) != std::string::npos )
+		{
+			// Stranger is typing, not supported by chat module yet
 			SkinPlaySound( "StrangerTyp" );
 		}
 
-		if ( resp.data.find( "[\"stoppedTyping\"]" ) != std::string::npos ) {
-			// Stranger stopped typing
-			// TODO: not supported by Group chats right now
-
+		if ( resp.data.find( "[\"stoppedTyping\"]" ) != std::string::npos
+			|| resp.data.find( "[\"spyStoppedTyping\"," ) != std::string::npos )
+		{
+			// Stranger stopped typing, not supported by chat module yet
 			SkinPlaySound( "StrangerTypStop" );
-		}
-
-		if ( (pos = resp.data.find( "[\"spyTyping\"," )) != std::string::npos ) {
-			/*pos += 15;
-
-			std::string stranger = utils::text::trim(
-				utils::text::special_expressions_decode(
-					utils::text::slashu_to_utf8(
-						resp.data.substr(pos, resp.data.find("\"]", pos) - pos)	) ) );
-
-			// parent->UpdateChat(NULL, question.c_str());*/
-
-			SkinPlaySound( "StrangerTyp" );
-		}
-		
-		if ( (pos = resp.data.find( "[\"spyStoppedTyping\"," )) != std::string::npos ) {
-			/*pos += 22;
-
-			std::string stranger = utils::text::trim(
-				utils::text::special_expressions_decode(
-					utils::text::slashu_to_utf8(
-						resp.data.substr(pos, resp.data.find("\"]", pos) - pos)	) ) );
-
-			// parent->UpdateChat(NULL, question.c_str());*/
-
-			SkinPlaySound( "StrangerTypStop" );
-		}
-
-		if ( (pos = resp.data.find( "[\"spyDisconnected\"," )) != std::string::npos ) {
-			pos += 21;
-
-			std::string stranger = utils::text::trim(
-				utils::text::special_expressions_decode(
-					utils::text::slashu_to_utf8(
-						resp.data.substr(pos, resp.data.find("\"]", pos) - pos)	) ) );
-
-			char str[255];
-			mir_snprintf(str, sizeof(str), Translate("%s disconnected."), Translate(stranger.c_str()));
-			
-			TCHAR *msg = mir_a2t_cp(str, CP_UTF8);
-			parent->UpdateChat(NULL, msg);
-			mir_free(msg);
-
-			// Stranger disconnected
-			if (DBGetContactSettingByte(NULL, parent->m_szModuleName, OMEGLE_KEY_DONT_STOP, 0))
-			{
-				SkinPlaySound( "StrangerChange" );
-				parent->NewChat();
-			}
-			else
-				parent->StopChat(false);
 		}
 
 		pos = 0;
@@ -660,6 +604,31 @@ bool Omegle_client::events( )
 				parent->NewChat();
 			}
 			else			
+				parent->StopChat(false);
+		}
+
+		if ( (pos = resp.data.find( "[\"spyDisconnected\"," )) != std::string::npos ) {
+			pos += 21;
+
+			std::string stranger = utils::text::trim(
+				utils::text::special_expressions_decode(
+					utils::text::slashu_to_utf8(
+						resp.data.substr(pos, resp.data.find("\"]", pos) - pos)	) ) );
+
+			char str[255];
+			mir_snprintf(str, sizeof(str), Translate("%s disconnected."), Translate(stranger.c_str()));
+			
+			TCHAR *msg = mir_a2t_cp(str, CP_UTF8);
+			parent->UpdateChat(NULL, msg);
+			mir_free(msg);
+
+			// Stranger disconnected
+			if (DBGetContactSettingByte(NULL, parent->m_szModuleName, OMEGLE_KEY_DONT_STOP, 0))
+			{
+				SkinPlaySound( "StrangerChange" );
+				parent->NewChat();
+			}
+			else
 				parent->StopChat(false);
 		}
 
