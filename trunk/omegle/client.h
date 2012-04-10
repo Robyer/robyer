@@ -76,7 +76,7 @@ public:
 	std::map< std::string, std::string >    headers;
 	void    store_headers( http::response* resp, NETLIBHTTPHEADER* headers, int headers_count );
 	
-	std::string get_server( );
+	std::string get_server( bool not_last = false );
 
 	// Connection handling
 	unsigned int error_count_;

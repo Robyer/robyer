@@ -134,15 +134,17 @@ bool Omegle_client::handle_error( std::string method, bool force_disconnect )
 
 //////////////////////////////////////////////////////////////////////////////
 
-std::string Omegle_client::get_server( )
+std::string Omegle_client::get_server( bool not_last )
 {
+	BYTE q = not_last ? 1 : 0;	
+
 	BYTE server = DBGetContactSettingByte(NULL, parent->m_szModuleName, OMEGLE_KEY_SERVER, 0);
-	if (server < 0 || server >= SIZEOF(servers))
-		server = 0;	
+	if (server < 0 || server >= (SIZEOF(servers)-q))
+		server = 0;
 
 	if (server == 0) {
 		srand(::time(NULL));
-		server = (rand() % (SIZEOF(servers)-1))+1;
+		server = (rand() % (SIZEOF(servers)-1-q))+1;
 	}
 
 	return servers[server];
@@ -294,8 +296,8 @@ void Omegle_client::store_headers( http::response* resp, NETLIBHTTPHEADER* heade
 {
 	for ( int i = 0; i < headersCount; i++ )
 	{
-		std::string header_name = headers[i].szName; // TODO: Casting?
-		std::string header_value = headers[i].szValue; // TODO: Casting?
+		std::string header_name = headers[i].szName;
+		std::string header_value = headers[i].szValue;
 
 		// TODO RM: (un)comment
 		//parent->Log("----- Got header '%s': %s", header_name.c_str(), header_value.c_str() );
@@ -317,7 +319,8 @@ bool Omegle_client::start()
 	std::string data;
 
 	if (this->spy_mode_) {
-		// TODO: select any server BUT Quarks, which doesn't support this (it seems)
+		// Select any server but quarks, which doesn't support this (it seems)
+		this->server_ = get_server(true);
 
 		if (this->question_.empty()) {
 			data = "&wantsspy=1";
