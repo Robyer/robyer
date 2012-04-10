@@ -144,7 +144,7 @@ public:
 	void DeleteChatContact(const TCHAR *name);
 	void SetChatStatus(int);
 	void ClearChat();	
-	void SetTopic(const TCHAR *topic);
+	void SetTopic(const TCHAR *topic = NULL);
 
 	// Connection client
 	Omegle_client facy;

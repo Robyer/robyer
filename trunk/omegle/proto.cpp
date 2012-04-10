@@ -62,10 +62,9 @@ OmegleProto::OmegleProto(const char* proto_name, const TCHAR* username)
 
 	facy.set_handle(m_hNetlibUser);
 
-	SkinAddNewSoundExT( "StrangerIn", m_tszUserName, LPGENT( "Stranger connected" ) );
-	SkinAddNewSoundExT( "StrangerOut", m_tszUserName, LPGENT( "Stranger disconnected" ) );
-	SkinAddNewSoundExT( "MessageIn", m_tszUserName, LPGENT( "Incoming message" ) );
-	SkinAddNewSoundExT( "MessageOut", m_tszUserName, LPGENT( "Outgoing message" ) );
+	SkinAddNewSoundExT( "StrangerTyp", m_tszUserName, LPGENT( "Stranger typing" ) );
+	SkinAddNewSoundExT( "StrangerTypStop", m_tszUserName, LPGENT( "Stranger stopped typing" ) );
+	SkinAddNewSoundExT( "StrangerChange", m_tszUserName, LPGENT( "Changing stranger" ) );
 }
 
 OmegleProto::~OmegleProto( )
