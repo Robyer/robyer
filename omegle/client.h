@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define STATE_WAITING			1	// connecting to stranger
 #define STATE_ACTIVE			2	// active discussion
 #define STATE_DISCONNECTING		3	// disconnecting from stranger
+#define STATE_SPY				4	// spy mode (read-only)
 
 class Omegle_client
 {
@@ -36,14 +37,14 @@ public:
 	// Client definition
 	Omegle_client( )
 	{
-		chat_id_ = server_ = "";
+		chat_id_ = server_ = question_ = "";
 		nick_ = NULL;
 		//msgid_ = 0;
 		send_message_lock_ = NULL;
 		state_ = STATE_INACTIVE;
 		null_count_ = 0;
 
-		old_typing_ = typing_ = false;
+		old_typing_ = typing_ = spy_mode_ = false;
 
 		hConnection = NULL;
 		hEventsConnection = NULL;
@@ -60,6 +61,7 @@ public:
 	// Chat data
 	std::string chat_id_;
 	std::string server_;
+	std::string question_;
 	TCHAR *nick_;
 
 	HANDLE send_message_lock_;
@@ -69,6 +71,7 @@ public:
 	int state_;
 	bool typing_;
 	bool old_typing_;
+	bool spy_mode_;
 
 	// Data storage
 	std::map< std::string, std::string >    headers;
