@@ -51,7 +51,7 @@ static void StoreDBText(OmegleProto* ppro, HWND hwnd, int idCtrl, const char* sz
 	TCHAR tstr[OMEGLE_MESSAGE_LIMIT+1];
 
 	GetDlgItemText(hwnd, idCtrl, tstr, sizeof(tstr));
-	if ( lstrlen( tstr ) > 0 ) {
+	if ( _tcsclen( tstr ) > 0 ) {
 		DBWriteContactSettingTString(NULL, ppro->m_szModuleName, szSetting, tstr);
 	} else {
 		DBDeleteContactSetting(NULL, ppro->m_szModuleName, szSetting);
