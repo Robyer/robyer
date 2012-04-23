@@ -101,9 +101,6 @@ public:
 	virtual	int       __cdecl OnEvent( PROTOEVENTTYPE iEventType, WPARAM wParam, LPARAM lParam );
 
 	// Services
-	int  __cdecl GetName( WPARAM, LPARAM );
-	int  __cdecl GetStatus( WPARAM, LPARAM );
-	int  __cdecl SetStatus( WPARAM, LPARAM );
 	int  __cdecl SvcCreateAccMgrUI( WPARAM, LPARAM );
 
 	// Events
