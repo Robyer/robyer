@@ -174,5 +174,6 @@ void OmegleProto::EventsLoop(void *)
 		LOG( "***** OmegleProto::EventsLoop[%d] refreshing...", tim );
 	}
 
+	ResetEvent(events_loop_lock_);
 	LOG( "<<<<< Exiting OmegleProto::EventsLoop[%d]", tim );
 }
