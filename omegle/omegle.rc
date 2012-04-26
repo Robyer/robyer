@@ -167,7 +167,7 @@ IDI_OMEGLE              ICON                    "icons/omegle.ico"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,2,0
+ FILEVERSION 0,1,0,0
  PRODUCTVERSION 0,9,43,0
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
@@ -184,7 +184,7 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "FileDescription", "Omegle protocol plugin for Miranda IM"
-            VALUE "FileVersion", "0.0.2.0"
+            VALUE "FileVersion", "0.1.0.0"
             VALUE "InternalName", "Omegle"
             VALUE "LegalCopyright", "Copyright © 2011-12 Robert Pösel"
             VALUE "OriginalFilename", "omegle.dll"
