@@ -33,7 +33,7 @@ http::response facebook_client::flap( const int request_type, std::string* reque
 	nlhr.requestType = choose_method( request_type );
 	std::string url = choose_request_url( request_type, request_data, request_get_data );
 	nlhr.szUrl = (char*)url.c_str( );
-	nlhr.flags = NLHRF_HTTP11 | /*NLHRF_NODUMP |*/ choose_security_level( request_type );
+	nlhr.flags = NLHRF_HTTP11 | NLHRF_NODUMP | choose_security_level( request_type );
 	nlhr.headers = get_request_headers( request_type, &nlhr.headersCount );
 	
 	switch (request_type)
@@ -57,7 +57,6 @@ http::response facebook_client::flap( const int request_type, std::string* reque
 	switch ( request_type )
 	{
 	case FACEBOOK_REQUEST_LOGIN:
-	case FACEBOOK_REQUEST_SETUP_MACHINE:
 		nlhr.nlc = NULL;
 		break;
 
@@ -1285,7 +1284,7 @@ bool facebook_client::save_url(const std::string &url,const std::string &filenam
 	NETLIBHTTPREQUEST *resp;
 	req.requestType = REQUEST_GET;
 	req.szUrl = const_cast<char*>(url.c_str());
-	req.flags = NLHRF_HTTP11 | NLHRF_REDIRECT | NLHRF_PERSISTENT;
+	req.flags = NLHRF_HTTP11 | NLHRF_REDIRECT | NLHRF_PERSISTENT | NLHRF_NODUMP;
 	req.nlc = nlc;
 
 	resp = reinterpret_cast<NETLIBHTTPREQUEST*>(CallService( MS_NETLIB_HTTPTRANSACTION,

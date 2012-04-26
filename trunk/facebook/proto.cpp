@@ -226,16 +226,6 @@ void FacebookProto::SetAwayMsgWorker(void *)
 //////////////////////////////////////////////////////////////////////////////
 // SERVICES
 
-int FacebookProto::GetStatus( WPARAM wParam, LPARAM lParam )
-{
-	return m_iStatus;
-}
-
-int FacebookProto::SetStatus( WPARAM wParam, LPARAM lParam )
-{
-	return SetStatus( (int)wParam );
-}
-
 int FacebookProto::GetMyAwayMsg( WPARAM wParam, LPARAM lParam )
 {
 	DBVARIANT dbv = { DBVT_TCHAR };
@@ -295,12 +285,6 @@ int FacebookProto::OnEvent(PROTOEVENTTYPE event,WPARAM wParam,LPARAM lParam)
 
 //////////////////////////////////////////////////////////////////////////////
 // EVENTS
-
-int FacebookProto::GetName( WPARAM wParam, LPARAM lParam )
-{
-	lstrcpynA(reinterpret_cast<char*>(lParam),m_szProtoName,wParam);
-	return 0;
-}
 
 int FacebookProto::SvcCreateAccMgrUI(WPARAM wParam,LPARAM lParam)
 {

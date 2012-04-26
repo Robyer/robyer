@@ -204,6 +204,7 @@ void FacebookProto::UpdateLoop(void *)
 		LOG( "***** FacebookProto::UpdateLoop[%d] waking up...", tim );
 	}
 
+	ResetEvent(update_loop_lock_);
 	LOG( "<<<<< Exiting FacebookProto::UpdateLoop[%d]", tim );
 }
 

@@ -109,9 +109,6 @@ public:
 	////////////////////////
 
 	// Services
-	int  __cdecl GetName( WPARAM, LPARAM );
-	int  __cdecl GetStatus( WPARAM, LPARAM );
-	int  __cdecl SetStatus( WPARAM, LPARAM );
 	int  __cdecl GetMyAwayMsg( WPARAM, LPARAM );
 	int  __cdecl SetMyAwayMsg( WPARAM, LPARAM );
 	int  __cdecl SvcCreateAccMgrUI( WPARAM, LPARAM );
