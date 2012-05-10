@@ -184,14 +184,8 @@ int FacebookProto::GetAvatarInfo(WPARAM wParam, LPARAM lParam)
 
 	if (GetDbAvatarInfo(*AI, NULL))
 	{
-		if (!_access(AI->filename, 0))
-		{							
-			LOG("***** Giving AvatarInfo: %s", AI->filename);
-			return GAIR_SUCCESS;
-		}
-
-		if (wParam & GAIF_FORCE)
-		{
+		if (_access(AI->filename, 0) || (wParam & GAIF_FORCE))
+		{												
 			LOG("***** Starting avatar request thread for %s", AI->filename);
 			ScopedLock s( avatar_lock_ );
 
@@ -202,8 +196,12 @@ int FacebookProto::GetAvatarInfo(WPARAM wParam, LPARAM lParam)
 				if (is_empty)
 					ForkThread(&FacebookProto::UpdateAvatarWorker, this, NULL);
 			}
+			
 			return GAIR_WAITFOR;
 		}
+
+		LOG("***** Giving AvatarInfo: %s", AI->filename);
+		return GAIR_SUCCESS;
 	}
 	return GAIR_NOAVATAR;
 }
