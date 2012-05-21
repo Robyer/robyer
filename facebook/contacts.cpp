@@ -231,15 +231,17 @@ int FacebookProto::OnContactDeleted(WPARAM wparam,LPARAM)
 	HANDLE hContact = (HANDLE)wparam;
 
 	DBVARIANT dbv;
-	TCHAR text[512];
-	if ( !DBGetContactSettingTString(hContact, m_szModuleName, FACEBOOK_KEY_NAME, &dbv) ) {
-		mir_sntprintf(text,SIZEOF(text),TranslateT("Do you want to delete contact '%s' from server list?"),dbv.ptszVal);
+	char str[256];
+
+	if ( !DBGetContactSettingUTF8String(hContact, m_szModuleName, FACEBOOK_KEY_NAME, &dbv) ) {
+		mir_snprintf(str,SIZEOF(str),Translate("Do you want to delete contact '%s' from server list?"), dbv.pszVal);
 		DBFreeVariant(&dbv);
-	} else if( !DBGetContactSettingTString(hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv) ) {
-		mir_sntprintf(text,SIZEOF(text),TranslateT("Do you want to delete contact '%s' from server list?"),dbv.ptszVal);
+	} else if( !DBGetContactSettingUTF8String(hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv) ) {
+		mir_snprintf(str,SIZEOF(str),Translate("Do you want to delete contact '%s' from server list?"), dbv.pszVal);
 		DBFreeVariant(&dbv);
 	}	
 
+	TCHAR *text = mir_a2t_cp(str, CP_UTF8);
 	if (MessageBox( 0, text, m_tszUserName, MB_ICONWARNING | MB_YESNO | MB_DEFBUTTON2 ) == IDYES) {
 		
 		if( !DBGetContactSettingString(hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv) )
@@ -258,6 +260,7 @@ int FacebookProto::OnContactDeleted(WPARAM wparam,LPARAM)
 		}
 				
 	}
+	mir_free(text);
 
 	return 0;
 }
