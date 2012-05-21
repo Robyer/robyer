@@ -329,11 +329,8 @@ void FacebookProto::ProcessUnreadMessages( void* )
 			std::string::size_type pos3 = messageslist.find( "class=\\\"MessagingMessage ", pos2 );
 			std::string messagesgroup = messageslist.substr( pos2, pos3 - pos2 );
 
-			DWORD timestamp = NULL;
-			std::string strtime = utils::text::source_get_value( &messagesgroup, 2, "data-utime=\\\"", "\\\"" );
-			if (!utils::conversion::from_string<DWORD>(timestamp, strtime, std::dec)) {
-				timestamp = static_cast<DWORD>(::time(NULL));
-			}
+			DWORD timestamp = utils::conversion::to_timestamp( 
+								utils::text::source_get_value( &messagesgroup, 2, "data-utime=\\\"", "\\\"" ) );
 
 			pos3 = 0;
 			while ( ( pos3 = messagesgroup.find( "class=\\\"content noh", pos3 ) ) != std::string::npos )
@@ -444,7 +441,7 @@ void FacebookProto::ProcessMessages( void* data )
 
 			recv.flags = PREF_UTF;
 			recv.szMessage = const_cast<char*>(messages[i]->message_text.c_str());
-			recv.timestamp = static_cast<DWORD>(messages[i]->time);
+			recv.timestamp = messages[i]->time;
 
 			ccs.hContact = hContact;
 			ccs.szProtoService = PSR_MESSAGE;
