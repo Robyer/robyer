@@ -230,7 +230,8 @@ DWORD facebook_client::choose_security_level( int request_type )
 //	case FACEBOOK_REQUEST_BUDDY_LIST:
 //	case FACEBOOK_REQUEST_LOAD_FRIENDS:
 //  case FACEBOOK_REQUEST_DELETE_FRIEND:
-//	case FACEBOOK_REQUEST_ADD_FRIEND:
+//	case FACEBOOK_REQUEST_REQUEST_FRIEND:
+//	case FACEBOOK_REQUEST_APPROVE_FRIEND:
 //	case FACEBOOK_REQUEST_FEEDS:
 //	case FACEBOOK_REQUEST_NOTIFICATIONS:
 //	case FACEBOOK_REQUEST_RECONNECT:
@@ -261,7 +262,8 @@ int facebook_client::choose_method( int request_type )
 	case FACEBOOK_REQUEST_TYPING_SEND:
 	case FACEBOOK_REQUEST_LOGOUT:
 	case FACEBOOK_REQUEST_DELETE_FRIEND:
-	case FACEBOOK_REQUEST_ADD_FRIEND:
+	case FACEBOOK_REQUEST_REQUEST_FRIEND:
+	case FACEBOOK_REQUEST_APPROVE_FRIEND:
 		return REQUEST_POST;
 
 //	case FACEBOOK_REQUEST_HOME:
@@ -300,7 +302,8 @@ std::string facebook_client::choose_proto( int request_type )
 //	case FACEBOOK_REQUEST_ASYNC:
 //	case FACEBOOK_REQUEST_TYPING_SEND:
 //  case FACEBOOK_REQUEST_DELETE_FRIEND:
-//	case FACEBOOK_REQUEST_ADD_FRIEND:
+//	case FACEBOOK_REQUEST_REQUEST_FRIEND:
+//	case FACEBOOK_REQUEST_APPROVE_FRIEND:
 	default:
 		return HTTP_PROTO_REGULAR;
 
@@ -343,7 +346,8 @@ std::string facebook_client::choose_server( int request_type, std::string* data,
 //	case FACEBOOK_REQUEST_TYPING_SEND:
 //	case FACEBOOK_REQUEST_SETUP_MACHINE:
 //  case FACEBOOK_REQUEST_DELETE_FRIEND:
-//	case FACEBOOK_REQUEST_ADD_FRIEND:
+//	case FACEBOOK_REQUEST_REQUEST_FRIEND:
+//	case FACEBOOK_REQUEST_APPROVE_FRIEND:
 	default:
 		return FACEBOOK_SERVER_REGULAR;
 	}
@@ -380,9 +384,14 @@ std::string facebook_client::choose_action( int request_type, std::string* data,
 		return "/ajax/profile/removefriend.php?__a=1";
 	}
 
-	case FACEBOOK_REQUEST_ADD_FRIEND:
+	case FACEBOOK_REQUEST_REQUEST_FRIEND:
 	{
 		return "/ajax/add_friend/action.php?__a=1";
+	}
+
+	case FACEBOOK_REQUEST_APPROVE_FRIEND:
+	{
+		return "/ajax/reqs.php?__a=1";
 	}
 
 	case FACEBOOK_REQUEST_FEEDS:
@@ -484,7 +493,8 @@ NETLIBHTTPHEADER* facebook_client::get_request_headers( int request_type, int* h
 	case FACEBOOK_REQUEST_ASYNC:
 	case FACEBOOK_REQUEST_TYPING_SEND:
 	case FACEBOOK_REQUEST_DELETE_FRIEND:
-	case FACEBOOK_REQUEST_ADD_FRIEND:
+	case FACEBOOK_REQUEST_REQUEST_FRIEND:
+	case FACEBOOK_REQUEST_APPROVE_FRIEND:
 		*headers_count = 5;
 		break;
 
@@ -513,7 +523,8 @@ NETLIBHTTPHEADER* facebook_client::get_request_headers( int request_type, int* h
 	case FACEBOOK_REQUEST_ASYNC:
 	case FACEBOOK_REQUEST_TYPING_SEND:
 	case FACEBOOK_REQUEST_DELETE_FRIEND:
-	case FACEBOOK_REQUEST_ADD_FRIEND:
+	case FACEBOOK_REQUEST_REQUEST_FRIEND:
+	case FACEBOOK_REQUEST_APPROVE_FRIEND:
 		headers[4].szName = "Content-Type";
 		headers[4].szValue = "application/x-www-form-urlencoded; charset=utf-8";
 

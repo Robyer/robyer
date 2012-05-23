@@ -168,7 +168,7 @@ void FacebookProto::DeleteContactFromServer(void *data)
 			DBWriteContactSettingDword(fbu->handle, m_szModuleName, FACEBOOK_KEY_DELETED, ::time(NULL)); // set deleted time
 		}
 		
-		NotifyEvent(TranslateT("Deleting contact"), TranslateT("Contact was sucessfully removed from server."), NULL, FACEBOOK_EVENT_OTHER, NULL);		
+		NotifyEvent(TranslateT("Deleting contact"), TranslateT("Contact was sucessfully removed from your server list."), NULL, FACEBOOK_EVENT_OTHER, NULL);		
 	} else {
 		facy.client_notify( TranslateT("Error occured when removing contact from server.") );
 	}
@@ -198,7 +198,7 @@ void FacebookProto::AddContactToServer(void *data)
 	delete data;
 
 	// Get unread inbox threads
-	http::response resp = facy.flap( FACEBOOK_REQUEST_ADD_FRIEND, &query );
+	http::response resp = facy.flap( FACEBOOK_REQUEST_REQUEST_FRIEND, &query );
 
 	// Process result data
 	facy.validate_response(&resp);
@@ -220,6 +220,39 @@ void FacebookProto::AddContactToServer(void *data)
 
 }
 
+void FacebookProto::ApproveContactToServer(void *data)
+{
+	facy.handle_entry( "ApproveContactToServer" );
+
+	if ( data == NULL )
+		return;
+
+	std::string *id = (std::string*)data;
+		
+	std::string query = "fb_dtsg=" + facy.dtsg_;
+	query += "&confirm=" + *id;
+	query += "&type=friend_connect";
+	query += "&request_id=" + *id;
+	query += "&list_item_id=" + *id;
+	query += "_1_req&status_div_id=" + *id;
+	query += "_1_req_status&sce=1&inline=1&ref=/reqs.php&actions[Accept]=&__user=";
+	query += facy.self_.user_id;
+	query += "&phstamp=";
+	query += utils::time::mili_timestamp();
+
+	delete data;
+	
+	http::response resp = facy.flap( FACEBOOK_REQUEST_APPROVE_FRIEND, &query );
+
+	// Process result data
+	facy.validate_response(&resp);
+
+	if (resp.code != HTTP_CODE_OK)
+		facy.handle_error( "ApproveContactToServer" );
+	else 
+		NotifyEvent(TranslateT("Adding contact"), TranslateT("Contact was added to your server list."), NULL, FACEBOOK_EVENT_OTHER, NULL);
+
+}
 
 HANDLE FacebookProto::GetAwayMsg(HANDLE hContact)
 {

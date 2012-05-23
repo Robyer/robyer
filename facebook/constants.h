@@ -92,7 +92,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define FACEBOOK_REQUEST_BUDDY_LIST             120 // getting regular updates (friends online, ...)
 #define FACEBOOK_REQUEST_LOAD_FRIENDS			121 // getting list of all friends
 #define FACEBOOK_REQUEST_DELETE_FRIEND			122 // deleting friends
-#define FACEBOOK_REQUEST_ADD_FRIEND				123 // adding friends
+#define FACEBOOK_REQUEST_REQUEST_FRIEND			123 // requesting friends
+#define FACEBOOK_REQUEST_APPROVE_FRIEND			124 // approving friends
 #define FACEBOOK_REQUEST_FEEDS                  125 // getting feeds
 #define FACEBOOK_REQUEST_NOTIFICATIONS			126 // getting notifications
 #define FACEBOOK_REQUEST_RECONNECT              130 // getting __sequence_num__ and __channel_id__
