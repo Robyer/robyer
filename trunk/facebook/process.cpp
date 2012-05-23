@@ -536,6 +536,57 @@ void FacebookProto::ProcessNotifications( void* )
 	CODE_BLOCK_END
 }
 
+void FacebookProto::ProcessFriendRequests( void* )
+{
+	facy.handle_entry( "friendRequests" );
+
+	// Get notifications
+	http::response resp = facy.flap( FACEBOOK_REQUEST_LOAD_REQUESTS );
+
+	// Process result data
+	facy.validate_response(&resp);
+  
+	if (resp.code != HTTP_CODE_OK) {
+		facy.handle_error( "friendRequests" );
+		return;
+	}
+	
+	// Parse it
+	std::string reqs = utils::text::source_get_value(&resp.data, 2, "<div class=\"mRequestItem", "<div class=\"al aps\">");
+
+	std::string::size_type pos = 0;
+	std::string::size_type pos2 = 0;
+	bool last = false;
+
+	while (!last) {
+		std::string req;
+		if ((pos2 = reqs.find("<div class=\"mRequestItem", pos)) != std::string::npos) {
+			req = reqs.substr(pos, pos2 - pos);
+			pos = pos2 + 24;
+		} else {
+			req = reqs.substr(pos);
+			last = true;
+		}
+				
+		std::string get = utils::text::source_get_value(&req, 3, "<form", "action=\"", "\">");		
+
+		facebook_user *fbu = new facebook_user();
+		fbu->real_name = utils::text::source_get_value(&req, 2, "class=\"actor\">", "</");
+		fbu->user_id = utils::text::source_get_value(&get, 2, "id=", "&");
+
+		if (fbu->user_id.length() && fbu->real_name.length())
+		{
+			HANDLE hContact = this->AddToContactList(fbu, false, fbu->real_name.c_str());
+			DBWriteContactSettingString(hContact, this->m_szModuleName, FACEBOOK_KEY_APPROVE, get.c_str());
+
+			LOG("      Friendship request from: %s (%s)", fbu->real_name.c_str(), fbu->user_id.c_str());
+		} else {
+			LOG(" !!!  Wrong friendship request");
+		}
+	}
+
+	facy.handle_success( "friendRequests" );
+}
 
 void FacebookProto::ProcessFeeds( void* data )
 {

@@ -502,17 +502,8 @@ int FacebookProto::ApproveFriend(WPARAM wParam,LPARAM lParam)
 	if (isOffline())
 		return 0;
 
-	HANDLE hContact = reinterpret_cast<HANDLE>(wParam);
-
-	DBVARIANT dbv;
-	if( !DBGetContactSettingString(hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv) )
-	{
-		if (!isOffline()) {
-			std::string* id = new std::string(dbv.pszVal);
-			ForkThread( &FacebookProto::ApproveContactToServer, this, ( void* )id );
-			DBFreeVariant(&dbv);
-		}
-	}
+	HANDLE *hContact = new HANDLE(reinterpret_cast<HANDLE>(wParam));
+	ForkThread( &FacebookProto::ApproveContactToServer, this, ( void* )hContact );
 
 	return 0;
 }
