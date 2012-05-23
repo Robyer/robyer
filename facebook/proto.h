@@ -146,6 +146,7 @@ public:
 	void __cdecl ProcessUnreadMessages(void*);
 	void __cdecl ProcessFeeds(void*);
 	void __cdecl ProcessNotifications(void*);
+	void __cdecl ProcessFriendRequests(void*);
 
 	// Worker threads
 	void __cdecl SignOn(void*);

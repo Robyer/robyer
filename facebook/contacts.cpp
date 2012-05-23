@@ -229,29 +229,36 @@ void FacebookProto::ApproveContactToServer(void *data)
 
 	std::string *id = (std::string*)data;
 		
-	std::string query = "fb_dtsg=" + facy.dtsg_;
-	query += "&confirm=" + *id;
-	query += "&type=friend_connect";
-	query += "&request_id=" + *id;
-	query += "&list_item_id=" + *id;
-	query += "_1_req&status_div_id=" + *id;
-	query += "_1_req_status&sce=1&inline=1&ref=/reqs.php&actions[Accept]=&__user=";
-	query += facy.self_.user_id;
-	query += "&phstamp=";
-	query += utils::time::mili_timestamp();
+	std::string post_data = "fb_dtsg=" + facy.dtsg_;
+	post_data += "&charset_test=%e2%82%ac%2c%c2%b4%2c%e2%82%ac%2c%c2%b4%2c%e6%b0%b4%2c%d0%94%2c%d0%84&confirm_button=";
 
-	delete data;
-	
-	http::response resp = facy.flap( FACEBOOK_REQUEST_APPROVE_FRIEND, &query );
+	std::string get_data;
+
+	HANDLE *hContact = (HANDLE*)data;
+
+	DBVARIANT dbv;
+	if (!DBGetContactSettingString(*hContact, m_szModuleName, FACEBOOK_KEY_APPROVE, &dbv))
+	{
+		get_data = dbv.pszVal;
+		DBFreeVariant(&dbv);
+	}	
+
+	// replace absolute link to params only
+	utils::text::replace_first(&get_data, "/a/notifications.php?", "&");
+
+	http::response resp = facy.flap( FACEBOOK_REQUEST_APPROVE_FRIEND, &post_data, &get_data );
 
 	// Process result data
 	facy.validate_response(&resp);
 
 	if (resp.code != HTTP_CODE_OK)
 		facy.handle_error( "ApproveContactToServer" );
-	else 
+	else {
 		NotifyEvent(TranslateT("Adding contact"), TranslateT("Contact was added to your server list."), NULL, FACEBOOK_EVENT_OTHER, NULL);
+		DBDeleteContactSetting(*hContact, m_szModuleName, FACEBOOK_KEY_APPROVE);
+	}
 
+	delete data;
 }
 
 HANDLE FacebookProto::GetAwayMsg(HANDLE hContact)
