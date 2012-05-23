@@ -491,6 +491,32 @@ int FacebookProto::AddFriend(WPARAM wParam,LPARAM lParam)
 	return 0;
 }
 
+int FacebookProto::ApproveFriend(WPARAM wParam,LPARAM lParam)
+{
+	if (wParam == NULL)
+	{ // self contact
+//		CallService(MS_UTILS_OPENURL,1,reinterpret_cast<LPARAM>(FACEBOOK_URL_PROFILE));
+		return 0;
+	}
+
+	if (isOffline())
+		return 0;
+
+	HANDLE hContact = reinterpret_cast<HANDLE>(wParam);
+
+	DBVARIANT dbv;
+	if( !DBGetContactSettingString(hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv) )
+	{
+		if (!isOffline()) {
+			std::string* id = new std::string(dbv.pszVal);
+			ForkThread( &FacebookProto::ApproveContactToServer, this, ( void* )id );
+			DBFreeVariant(&dbv);
+		}
+	}
+
+	return 0;
+}
+
 void FacebookProto::ToggleStatusMenuItems( BOOL bEnable )
 {
 	CLISTMENUITEM clmi = { 0 };

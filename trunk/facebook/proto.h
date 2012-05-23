@@ -117,7 +117,8 @@ public:
 	int  __cdecl GetAvatarCaps(WPARAM, LPARAM );
 	int  __cdecl VisitProfile(WPARAM, LPARAM );
 	int  __cdecl RemoveFriend(WPARAM, LPARAM );
-	int  __cdecl AddFriend(WPARAM, LPARAM );	
+	int  __cdecl AddFriend(WPARAM, LPARAM );
+	int  __cdecl ApproveFriend(WPARAM, LPARAM );
 
 	// Events
 	int  __cdecl OnModulesLoaded(WPARAM, LPARAM);
@@ -158,6 +159,7 @@ public:
 	void __cdecl MessagingWorker(void*);
 	void __cdecl DeleteContactFromServer(void*);
 	void __cdecl AddContactToServer(void*);
+	void __cdecl ApproveContactToServer(void*);	
 
 	// Contacts handling
 	bool    IsMyContact(HANDLE, bool include_chat = false);
