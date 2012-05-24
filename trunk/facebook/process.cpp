@@ -724,8 +724,6 @@ void FacebookProto::SearchAckThread(void *targ)
 				last = true;
 			}
 
-			Log(item.c_str());
-				
 			std::string id = utils::text::source_get_value2(&item, "?id=", "&\"");
 			if (id.empty())
 				id = utils::text::source_get_value2(&item, "?slog=", "&\"");

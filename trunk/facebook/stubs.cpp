@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "common.h"
 
 HANDLE FacebookProto::AddToList(int flags, PROTOSEARCHRESULT* psr)
-{
+{	
 	return 0;
 };
 
@@ -82,11 +82,6 @@ int FacebookProto::GetInfo( HANDLE hContact, int infoType )
 {
 	// TODO: Most probably some ProtoAck should be here instead
 	return 1;
-}
-
-HANDLE FacebookProto::SearchByName( const PROTOCHAR* nick, const PROTOCHAR* firstName, const PROTOCHAR* lastName )
-{
-	return 0;
 }
 
 HWND FacebookProto::SearchAdvanced(HWND owner)
