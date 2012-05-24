@@ -84,16 +84,6 @@ int FacebookProto::GetInfo( HANDLE hContact, int infoType )
 	return 1;
 }
 
-HANDLE FacebookProto::SearchBasic( const PROTOCHAR* id )
-{
-	return 0;
-}
-
-HANDLE FacebookProto::SearchByEmail( const PROTOCHAR* email )
-{
-	return 0;
-}
-
 HANDLE FacebookProto::SearchByName( const PROTOCHAR* nick, const PROTOCHAR* firstName, const PROTOCHAR* lastName )
 {
 	return 0;

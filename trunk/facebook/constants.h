@@ -90,6 +90,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define FACEBOOK_REQUEST_SETUP_MACHINE          102 // setting machine name
 #define FACEBOOK_REQUEST_LOGOUT                 106 // disconnecting physically
 #define FACEBOOK_REQUEST_HOME                   110 // getting __post_form_id__ + __fb_dtsg__ + ...
+#define FACEBOOK_REQUEST_SEARCH                 111 // searching 
 #define FACEBOOK_REQUEST_BUDDY_LIST             120 // getting regular updates (friends online, ...)
 #define FACEBOOK_REQUEST_LOAD_FRIENDS			121 // getting list of all friends
 #define FACEBOOK_REQUEST_DELETE_FRIEND			122 // deleting friends
