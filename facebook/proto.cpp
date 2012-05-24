@@ -250,6 +250,44 @@ HANDLE FacebookProto::SearchByName( const PROTOCHAR* nick, const PROTOCHAR* firs
 	return SearchBasic(arg);
 }
 
+HANDLE FacebookProto::AddToList(int flags, PROTOSEARCHRESULT* psr)
+{
+	char *id = mir_t2a_cp(psr->id, CP_UTF8);
+	char *name = mir_t2a_cp(psr->firstName, CP_UTF8);
+	char *surname = mir_t2a_cp(psr->lastName, CP_UTF8);
+
+	facebook_user fbu;
+	fbu.user_id = id;
+	fbu.real_name = name;
+	fbu.real_name += " ";
+	fbu.real_name += surname;
+
+	HANDLE hContact = AddToContactList(&fbu, false, fbu.real_name.c_str());
+	if (hContact) {
+		if (flags & PALF_TEMPORARY)
+		{
+			DBWriteContactSettingByte(hContact, "Clist", "Hidden", 1);
+			DBWriteContactSettingByte(hContact, "Clist", "NotOnList", 1);
+		}
+		else if (DBGetContactSettingByte(hContact, "CList", "NotOnList", 0))
+		{
+			DBDeleteContactSetting(hContact, "CList", "Hidden");
+			DBDeleteContactSetting(hContact, "CList", "NotOnList");
+		}
+	}
+
+	mir_free(id);
+	mir_free(name);
+	mir_free(surname);
+
+	return hContact;
+}
+
+int FacebookProto::AuthRequest(HANDLE hContact,const PROTOCHAR *message)
+{
+	return AddFriend((WPARAM)hContact, NULL);
+}
+
 //////////////////////////////////////////////////////////////////////////////
 // SERVICES
 
