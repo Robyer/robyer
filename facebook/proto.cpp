@@ -113,10 +113,14 @@ DWORD_PTR FacebookProto::GetCaps( int type, HANDLE hContact )
 	switch(type)
 	{
 	case PFLAGNUM_1: // TODO: Other caps available: PF1_BASICSEARCH, PF1_SEARCHBYEMAIL
+	{
+		DWORD_PTR flags = PF1_IM | PF1_CHAT | PF1_SERVERCLIST | PF1_AUTHREQ | PF1_ADDED | PF1_SEARCHBYEMAIL | PF1_BASICSEARCH; // | PF1_VISLIST | PF1_INVISLIST | PF1_EXTSEARCH | PF1_ADDSEARCHRES;
+		
 		if ( getByte( FACEBOOK_KEY_SET_MIRANDA_STATUS, 0 ) )
-			return PF1_IM | PF1_CHAT | PF1_SERVERCLIST | PF1_MODEMSG;
+			return flags |= PF1_MODEMSG;
 		else
-			return PF1_IM | PF1_CHAT | PF1_SERVERCLIST | PF1_MODEMSGRECV;
+			return flags |= PF1_MODEMSGRECV;
+	}
 	case PFLAGNUM_2:
 		return PF2_ONLINE | PF2_INVISIBLE | PF2_ONTHEPHONE | PF2_IDLE; // | PF2_SHORTAWAY;
 	case PFLAGNUM_3:
@@ -125,7 +129,7 @@ DWORD_PTR FacebookProto::GetCaps( int type, HANDLE hContact )
 		else
 			return 0;
 	case PFLAGNUM_4:
-		return PF4_FORCEAUTH | PF4_NOCUSTOMAUTH | PF4_SUPPORTIDLE | PF4_IMSENDUTF | PF4_AVATARS | PF4_SUPPORTTYPING | PF4_NOAUTHDENYREASON | PF4_IMSENDOFFLINE;
+		return PF4_NOCUSTOMAUTH | PF4_FORCEADDED | PF4_IMSENDUTF | PF4_AVATARS | PF4_SUPPORTTYPING | PF4_NOAUTHDENYREASON | PF4_IMSENDOFFLINE;
 	case PFLAGNUM_5:
 		return PF2_ONTHEPHONE;
 	case PFLAG_MAXLENOFMESSAGE:
@@ -221,6 +225,22 @@ void FacebookProto::SetAwayMsgWorker(void *)
 {
 	if ( !last_status_msg_.empty() )
 		facy.set_status( last_status_msg_ );
+}
+
+HANDLE FacebookProto::SearchBasic( const PROTOCHAR* id )
+{
+	if (isOffline())
+		return 0;
+	
+	TCHAR* email = mir_tstrdup(id);
+	ForkThread(&FacebookProto::SearchAckThread, this, (void*)email);
+
+	return email;
+}
+
+HANDLE FacebookProto::SearchByEmail( const PROTOCHAR* email )
+{
+	return SearchBasic(email);
 }
 
 //////////////////////////////////////////////////////////////////////////////

@@ -230,6 +230,7 @@ DWORD facebook_client::choose_security_level( int request_type )
 //	case FACEBOOK_REQUEST_BUDDY_LIST:
 //	case FACEBOOK_REQUEST_LOAD_FRIENDS:
 //	case FACEBOOK_REQUEST_LOAD_REQUESTS:
+//	case FACEBOOK_REQUEST_SEARCH:
 //  case FACEBOOK_REQUEST_DELETE_FRIEND:
 //	case FACEBOOK_REQUEST_REQUEST_FRIEND:
 //	case FACEBOOK_REQUEST_APPROVE_FRIEND:
@@ -274,6 +275,7 @@ int facebook_client::choose_method( int request_type )
 //	case FACEBOOK_REQUEST_RECONNECT:
 //	case FACEBOOK_REQUEST_LOAD_FRIENDS:		
 //	case FACEBOOK_REQUEST_LOAD_REQUESTS:
+//	case FACEBOOK_REQUEST_SEARCH:
 	default:
 		return REQUEST_GET;
 	}
@@ -297,6 +299,7 @@ std::string facebook_client::choose_proto( int request_type )
 //	case FACEBOOK_REQUEST_BUDDY_LIST:
 //	case FACEBOOK_REQUEST_LOAD_FRIENDS:
 //	case FACEBOOK_REQUEST_LOAD_REQUESTS:
+//	case FACEBOOK_REQUEST_SEARCH:
 //	case FACEBOOK_REQUEST_STATUS_SET:
 //	case FACEBOOK_REQUEST_MESSAGE_SEND:
 //	case FACEBOOK_REQUEST_MESSAGES_RECEIVE:
@@ -336,6 +339,7 @@ std::string facebook_client::choose_server( int request_type, std::string* data,
 
 	case FACEBOOK_REQUEST_APPROVE_FRIEND:
 	case FACEBOOK_REQUEST_LOAD_REQUESTS:
+	case FACEBOOK_REQUEST_SEARCH:
 		return FACEBOOK_SERVER_MOBILE;
 
 //	case FACEBOOK_REQUEST_LOGOUT:
@@ -388,6 +392,15 @@ std::string facebook_client::choose_action( int request_type, std::string* data,
 	case FACEBOOK_REQUEST_LOAD_REQUESTS:
 	{
 		return "/friends/";
+	}
+
+	case FACEBOOK_REQUEST_SEARCH:
+	{
+		std::string action = "/search/?search=people&query=";
+		if (get_data != NULL) {
+			action += *get_data;
+		}
+		return action;
 	}
 
 	case FACEBOOK_REQUEST_DELETE_FRIEND:
@@ -502,6 +515,7 @@ NETLIBHTTPHEADER* facebook_client::get_request_headers( int request_type, int* h
 	case FACEBOOK_REQUEST_BUDDY_LIST:
 	case FACEBOOK_REQUEST_LOAD_FRIENDS:
 	case FACEBOOK_REQUEST_LOAD_REQUESTS:
+	case FACEBOOK_REQUEST_SEARCH:
 	case FACEBOOK_REQUEST_STATUS_SET:
 	case FACEBOOK_REQUEST_MESSAGE_SEND:
 	case FACEBOOK_REQUEST_VISIBILITY:
@@ -533,6 +547,7 @@ NETLIBHTTPHEADER* facebook_client::get_request_headers( int request_type, int* h
 	case FACEBOOK_REQUEST_BUDDY_LIST:
 	case FACEBOOK_REQUEST_LOAD_FRIENDS:
 	case FACEBOOK_REQUEST_LOAD_REQUESTS:
+	case FACEBOOK_REQUEST_SEARCH:
 	case FACEBOOK_REQUEST_STATUS_SET:
 	case FACEBOOK_REQUEST_MESSAGE_SEND:
 	case FACEBOOK_REQUEST_VISIBILITY:
