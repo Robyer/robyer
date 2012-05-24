@@ -114,7 +114,7 @@ DWORD_PTR FacebookProto::GetCaps( int type, HANDLE hContact )
 	{
 	case PFLAGNUM_1: // TODO: Other caps available: PF1_BASICSEARCH, PF1_SEARCHBYEMAIL
 	{
-		DWORD_PTR flags = PF1_IM | PF1_CHAT | PF1_SERVERCLIST | PF1_AUTHREQ | PF1_ADDED | PF1_SEARCHBYEMAIL | PF1_BASICSEARCH; // | PF1_VISLIST | PF1_INVISLIST | PF1_EXTSEARCH | PF1_ADDSEARCHRES;
+		DWORD_PTR flags = PF1_IM | PF1_CHAT | PF1_SERVERCLIST | PF1_AUTHREQ | PF1_ADDED | PF1_BASICSEARCH | PF1_USERIDISEMAIL | PF1_SEARCHBYEMAIL | PF1_SEARCHBYNAME | PF1_ADDSEARCHRES; // | PF1_VISLIST | PF1_INVISLIST;
 		
 		if ( getByte( FACEBOOK_KEY_SET_MIRANDA_STATUS, 0 ) )
 			return flags |= PF1_MODEMSG;
@@ -241,6 +241,13 @@ HANDLE FacebookProto::SearchBasic( const PROTOCHAR* id )
 HANDLE FacebookProto::SearchByEmail( const PROTOCHAR* email )
 {
 	return SearchBasic(email);
+}
+
+HANDLE FacebookProto::SearchByName( const PROTOCHAR* nick, const PROTOCHAR* firstName, const PROTOCHAR* lastName )
+{
+	TCHAR arg[200];
+	_sntprintf (arg, SIZEOF(arg), _T("%s %s %s"), nick, firstName, lastName);
+	return SearchBasic(arg);
 }
 
 //////////////////////////////////////////////////////////////////////////////
