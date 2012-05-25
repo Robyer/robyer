@@ -211,13 +211,9 @@ int FacebookProto::OnPrebuildContactMenu(WPARAM wParam,LPARAM lParam)
 {	
 	HANDLE hContact = reinterpret_cast<HANDLE>(wParam);
 
-	// Ignore chatrooms
-	if (DBGetContactSettingByte(hContact, m_szModuleName, "ChatRoom", 0))
-		return 0;
-
 	EnableMenuItem(g_hContactMenuItems[CMI_VISIT_PROFILE], true);
 
-	if (!isOffline())
+	if (!isOffline() && !DBGetContactSettingByte(hContact, m_szModuleName, "ChatRoom", 0))
 	{
 		bool ctrlPressed = GetKeyState(VK_CONTROL) & 0x8000;
 
