@@ -37,6 +37,7 @@ static const icons[] =
 	{ "mind",			LPGEN("Mind"),						IDI_MIND },
 	
 	{ "authRevoke",		LPGEN("Cancel friendship"),			IDI_AUTH_REVOKE },
+	//{ "authRevokeReq",	LPGEN("Cancel friendship request"),	IDI_AUTH_REVOKE },
 	{ "authAsk",		LPGEN("Request friendship"),		IDI_AUTH_ASK },
 	{ "authGrant",		LPGEN("Approve friendship"),		IDI_AUTH_GRANT },
 	
@@ -168,6 +169,14 @@ void InitContactMenus()
 	g_hContactMenuItems[CMI_AUTH_REVOKE] = reinterpret_cast<HANDLE>(
 		CallService(MS_CLIST_ADDCONTACTMENUITEM,0,(LPARAM)&mi) );
 
+	/* mi.position=-2000006001;
+	mi.icolibItem = GetIconHandle("authRevokeReq");
+	mi.pszName = GetIconDescription("authRevokeReq");
+	mi.pszService = "FacebookProto/CancelFriendshipRequest";
+	g_hContactMenuSvc[CMI_AUTH_REVOKE_REQ] = CreateServiceFunction(mi.pszService,GlobalService<&FacebookProto::CancelFriendshipRequest>);
+	g_hContactMenuItems[CMI_AUTH_REVOKE_REQ] = reinterpret_cast<HANDLE>(
+		CallService(MS_CLIST_ADDCONTACTMENUITEM,0,(LPARAM)&mi) ); */
+
 	mi.position=-2000006002;
 	mi.icolibItem = GetIconHandle("authAsk");
 	mi.pszName = GetIconDescription("authAsk");
@@ -215,23 +224,14 @@ int FacebookProto::OnPrebuildContactMenu(WPARAM wParam,LPARAM lParam)
 
 	if (!isOffline() && !DBGetContactSettingByte(hContact, m_szModuleName, "ChatRoom", 0))
 	{
-		bool ctrlPressed = GetKeyState(VK_CONTROL) & 0x8000;
+		bool ctrlPressed = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
 
-		bool grant = false;
-		DBVARIANT dbv;
-		if (!DBGetContactSettingString(hContact, m_szModuleName, FACEBOOK_KEY_APPROVE, &dbv))
-		{
-			grant = true;
-			DBFreeVariant(&dbv);
-		}
+		BYTE type = DBGetContactSettingDword(hContact, m_szModuleName, FACEBOOK_KEY_CONTACT_TYPE, 0);
 
-		bool notOnList = (DBGetContactSettingDword(hContact, m_szModuleName, FACEBOOK_KEY_DELETED, 0)
-			|| DBGetContactSettingDword(hContact, m_szModuleName, FACEBOOK_KEY_CONTACT_TYPE, 0)
-			|| DBGetContactSettingByte(hContact, "CList", "NotOnList", 0) );
-
-		EnableMenuItem(g_hContactMenuItems[CMI_AUTH_ASK], ctrlPressed || (notOnList && !grant));
-		EnableMenuItem(g_hContactMenuItems[CMI_AUTH_GRANT], ctrlPressed || (notOnList && grant));
-		EnableMenuItem(g_hContactMenuItems[CMI_AUTH_REVOKE], ctrlPressed || (!notOnList && !grant));
+		EnableMenuItem(g_hContactMenuItems[CMI_AUTH_ASK], ctrlPressed || type == FACEBOOK_CONTACT_NONE || !type);
+		EnableMenuItem(g_hContactMenuItems[CMI_AUTH_GRANT], ctrlPressed || type == FACEBOOK_CONTACT_APPROVE);
+		EnableMenuItem(g_hContactMenuItems[CMI_AUTH_REVOKE], ctrlPressed || type == FACEBOOK_CONTACT_FRIEND);
+		//EnableMenuItem(g_hContactMenuItems[CMI_AUTH_CANCEL], ctrlPressed || type == FACEBOOK_CONTACT_REQUEST);
 	}
 
 	return 0;

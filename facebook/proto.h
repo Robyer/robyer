@@ -166,7 +166,7 @@ public:
 	// Contacts handling
 	bool    IsMyContact(HANDLE, bool include_chat = false);
 	HANDLE  ContactIDToHContact(std::string);
-	HANDLE  AddToContactList(facebook_user*, bool dont_check = false, const char *new_name = "");
+	HANDLE  AddToContactList(facebook_user*, BYTE type, bool dont_check = false, const char *new_name = "");
 	void    SetAllContactStatuses(int);	
 
 	// Chats handling
@@ -195,7 +195,6 @@ public:
 	HANDLE  avatar_lock_;
 	HANDLE  log_lock_;
 	HANDLE  update_loop_lock_;
-	//HANDLE  message_loop_lock_;
 
 	HANDLE  m_hNetlibUser;
 

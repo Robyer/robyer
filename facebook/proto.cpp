@@ -96,7 +96,6 @@ FacebookProto::~FacebookProto( )
 	CloseHandle( avatar_lock_ );
 	CloseHandle( log_lock_ );
 	CloseHandle( update_loop_lock_ );
-	//CloseHandle( this->message_loop_lock_ );
 	CloseHandle( facy.buddies_lock_ );
 	CloseHandle( facy.send_message_lock_ );
 	CloseHandle( facy.fcb_conn_lock_ );
@@ -114,7 +113,7 @@ DWORD_PTR FacebookProto::GetCaps( int type, HANDLE hContact )
 	{
 	case PFLAGNUM_1: // TODO: Other caps available: PF1_BASICSEARCH, PF1_SEARCHBYEMAIL
 	{
-		DWORD_PTR flags = PF1_IM | PF1_CHAT | PF1_SERVERCLIST | PF1_AUTHREQ | PF1_ADDED | PF1_BASICSEARCH | PF1_USERIDISEMAIL | PF1_SEARCHBYEMAIL | PF1_SEARCHBYNAME | PF1_ADDSEARCHRES; // | PF1_VISLIST | PF1_INVISLIST;
+		DWORD_PTR flags = PF1_IM | PF1_CHAT | PF1_SERVERCLIST | PF1_AUTHREQ | /*PF1_ADDED |*/ PF1_BASICSEARCH | PF1_USERIDISEMAIL | PF1_SEARCHBYEMAIL | PF1_SEARCHBYNAME | PF1_ADDSEARCHRES; // | PF1_VISLIST | PF1_INVISLIST;
 		
 		if ( getByte( FACEBOOK_KEY_SET_MIRANDA_STATUS, 0 ) )
 			return flags |= PF1_MODEMSG;
@@ -262,7 +261,7 @@ HANDLE FacebookProto::AddToList(int flags, PROTOSEARCHRESULT* psr)
 	fbu.real_name += " ";
 	fbu.real_name += surname;
 
-	HANDLE hContact = AddToContactList(&fbu, false, fbu.real_name.c_str());
+	HANDLE hContact = AddToContactList(&fbu, FACEBOOK_CONTACT_NONE, false, fbu.real_name.c_str());
 	if (hContact) {
 		if (flags & PALF_TEMPORARY)
 		{
@@ -286,6 +285,17 @@ HANDLE FacebookProto::AddToList(int flags, PROTOSEARCHRESULT* psr)
 int FacebookProto::AuthRequest(HANDLE hContact,const PROTOCHAR *message)
 {
 	return RequestFriendship((WPARAM)hContact, NULL);
+}
+
+int FacebookProto::Authorize(HANDLE hContact)
+{
+	return ApproveFriendship((WPARAM)hContact, NULL);
+}
+
+int FacebookProto::AuthDeny(HANDLE hContact,const PROTOCHAR *reason)
+{
+	// TODO: hide from facebook requests list
+	return 0;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -427,11 +437,18 @@ int FacebookProto::VisitProfile(WPARAM wParam,LPARAM lParam)
 	{
 		CallService(MS_UTILS_OPENURL,1,reinterpret_cast<LPARAM>(dbv.pszVal));
 		DBFreeVariant(&dbv);
+	}
+	else if (DBGetContactSettingByte(hContact,m_szModuleName,"ChatRoom",0))
+	{
+		std::string url = FACEBOOK_URL_GROUP;
+		if (!DBGetContactSettingString(hContact,m_szModuleName,"ChatRoomID",&dbv)) {
+			url += dbv.pszVal;
+			DBFreeVariant(&dbv);
+		}
+		CallService(MS_UTILS_OPENURL,1,reinterpret_cast<LPARAM>(url.c_str()));
 	} else {
-		// self contact, probably
 		// TODO: why isn't wParam == 0 when is status menu moved to main menu?
 		CallService(MS_UTILS_OPENURL,1,reinterpret_cast<LPARAM>(FACEBOOK_URL_PROFILE));
-		return 0;
 	}
 
 	return 0;
@@ -442,21 +459,46 @@ int FacebookProto::CancelFriendship(WPARAM wParam,LPARAM lParam)
 	if (wParam == NULL || isOffline())
 		return 0;
 
-	if (MessageBox( 0, TranslateT("Are you sure?"), TranslateT("Delete contact from server list"), MB_ICONWARNING | MB_YESNO | MB_DEFBUTTON2 ) != IDYES)
-		return 0;
+	bool deleting = (lParam == 1);
 
 	HANDLE hContact = reinterpret_cast<HANDLE>(wParam);
 
-	DBVARIANT dbv;			
-	if( !DBGetContactSettingString(hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv) )
-	{
-		std::string* id = new std::string(dbv.pszVal);
-		ForkThread( &FacebookProto::DeleteContactFromServer, this, ( void* )id );
-		DBFreeVariant(&dbv);
+	// Ignore groupchats and, if deleting, also not-friends
+	if (DBGetContactSettingByte(hContact, m_szModuleName, "ChatRoom", 0)
+		|| (deleting && DBGetContactSettingByte(hContact, m_szModuleName, FACEBOOK_KEY_CONTACT_TYPE, 0) != FACEBOOK_CONTACT_FRIEND))
+		return 0;
 
-		if ( !DBGetContactSettingDword(hContact, m_szModuleName, FACEBOOK_KEY_DELETED, 0) )
-			DBWriteContactSettingDword(hContact, m_szModuleName, FACEBOOK_KEY_DELETED, ::time(NULL));
+	DBVARIANT dbv;
+	char str[256];
+
+	if ( !DBGetContactSettingUTF8String(hContact, m_szModuleName, FACEBOOK_KEY_NAME, &dbv) ) {
+		mir_snprintf(str,SIZEOF(str),Translate("Do you want to cancel your friendship with '%s'?"), dbv.pszVal);
+		DBFreeVariant(&dbv);
+	} else if( !DBGetContactSettingUTF8String(hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv) ) {
+		mir_snprintf(str,SIZEOF(str),Translate("Do you want to cancel your friendship with '%s'?"), dbv.pszVal);
+		DBFreeVariant(&dbv);
 	}
+
+	TCHAR *text = mir_a2t_cp(str, CP_UTF8);
+	if (MessageBox( 0, text, m_tszUserName, MB_ICONWARNING | MB_YESNO | MB_DEFBUTTON2 ) == IDYES) {
+		
+		if( !DBGetContactSettingString(hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv) )
+		{
+			std::string* id = new std::string(dbv.pszVal);
+
+			if (deleting) {
+				facebook_user* fbu = facy.buddies.find( (*id) );
+				if (fbu != NULL) {
+					fbu->handle = NULL;
+				}
+			}
+
+			ForkThread( &FacebookProto::DeleteContactFromServer, this, ( void* )id );
+			DBFreeVariant(&dbv);
+		}
+				
+	}
+	mir_free(text);
 
 	return 0;
 }
