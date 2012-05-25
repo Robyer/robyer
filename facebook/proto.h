@@ -116,9 +116,9 @@ public:
 	int  __cdecl GetAvatarInfo(WPARAM, LPARAM );
 	int  __cdecl GetAvatarCaps(WPARAM, LPARAM );
 	int  __cdecl VisitProfile(WPARAM, LPARAM );
-	int  __cdecl RemoveFriend(WPARAM, LPARAM );
-	int  __cdecl AddFriend(WPARAM, LPARAM );
-	int  __cdecl ApproveFriend(WPARAM, LPARAM );
+	int  __cdecl CancelFriendship(WPARAM, LPARAM );
+	int  __cdecl RequestFriendship(WPARAM, LPARAM );
+	int  __cdecl ApproveFriendship(WPARAM, LPARAM );
 
 	// Events
 	int  __cdecl OnModulesLoaded(WPARAM, LPARAM);
