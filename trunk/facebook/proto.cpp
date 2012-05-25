@@ -285,7 +285,7 @@ HANDLE FacebookProto::AddToList(int flags, PROTOSEARCHRESULT* psr)
 
 int FacebookProto::AuthRequest(HANDLE hContact,const PROTOCHAR *message)
 {
-	return AddFriend((WPARAM)hContact, NULL);
+	return RequestFriendship((WPARAM)hContact, NULL);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -378,18 +378,6 @@ int FacebookProto::OnPreShutdown(WPARAM wParam,LPARAM lParam)
 	return 0;
 }
 
-int FacebookProto::OnPrebuildContactMenu(WPARAM wParam,LPARAM lParam)
-{
-	HANDLE hContact = reinterpret_cast<HANDLE>(wParam);
-	if(IsMyContact(hContact/*, true*/)) {
-		bool hide = (DBGetContactSettingDword(hContact, m_szModuleName, FACEBOOK_KEY_DELETED, 0)
-			|| DBGetContactSettingDword(hContact, m_szModuleName, FACEBOOK_KEY_CONTACT_TYPE, 0) );
-		ShowContactMenus(true, hide);
-	}
-
-	return 0;
-}
-
 int FacebookProto::OnOptionsInit(WPARAM wParam,LPARAM lParam)
 {
 	OPTIONSDIALOGPAGE odp = {sizeof(odp)};
@@ -422,55 +410,6 @@ int FacebookProto::OnOptionsInit(WPARAM wParam,LPARAM lParam)
 	return 0;
 }
 
-int FacebookProto::OnBuildStatusMenu(WPARAM wParam,LPARAM lParam)
-{
-	char text[200];
-	strcpy(text,m_szModuleName);
-	char *tDest = text+strlen(text);
-
-	HGENMENU hRoot;
-	CLISTMENUITEM mi = {sizeof(mi)};
-	mi.pszService = text;
-
-	hRoot = MO_GetProtoRootMenu(m_szModuleName);
-	if (hRoot == NULL)
-	{
-		mi.popupPosition = 500085000;
-		mi.hParentMenu = HGENMENU_ROOT;
-		mi.flags = CMIF_ICONFROMICOLIB | CMIF_ROOTPOPUP | CMIF_TCHAR | CMIF_KEEPUNTRANSLATED | ( this->isOnline() ? 0 : CMIF_GRAYED );
-		mi.icolibItem = GetIconHandle( "facebook" );
-		mi.ptszName = m_tszUserName;
-		hRoot = m_hMenuRoot = reinterpret_cast<HGENMENU>( CallService(
-			MS_CLIST_ADDPROTOMENUITEM,0,reinterpret_cast<LPARAM>(&mi)) );
-	} else {
-		if ( m_hMenuRoot )
-			CallService( MS_CLIST_REMOVEMAINMENUITEM, ( WPARAM )m_hMenuRoot, 0 );
-		m_hMenuRoot = NULL;
-	}
-
-	mi.flags = CMIF_ICONFROMICOLIB | CMIF_CHILDPOPUP | ( this->isOnline() ? 0 : CMIF_GRAYED );
-	mi.position = 201001;
-
-	CreateProtoService(m_szModuleName,"/Mind",&FacebookProto::OnMind,this);
-	strcpy(tDest,"/Mind");
-	mi.hParentMenu = hRoot;
-	mi.pszName = LPGEN("Mind...");
-	mi.icolibItem = GetIconHandle("mind");
-	m_hStatusMind = reinterpret_cast<HGENMENU>( CallService(
-		MS_CLIST_ADDPROTOMENUITEM,0,reinterpret_cast<LPARAM>(&mi)) );
-
-	CreateProtoService(m_szModuleName,"/VisitProfile",&FacebookProto::VisitProfile,this);
-	strcpy(tDest,"/VisitProfile");
-	mi.flags = CMIF_ICONFROMICOLIB | CMIF_CHILDPOPUP;
-	mi.pszName = LPGEN("Visit Profile");
-	mi.icolibItem = GetIconHandle("homepage");
-	// TODO RM: remember and properly free in destructor?
-	/*m_hStatusMind = */reinterpret_cast<HGENMENU>( CallService(
-		MS_CLIST_ADDPROTOMENUITEM,0,reinterpret_cast<LPARAM>(&mi)) );
-
-	return 0;
-}
-
 int FacebookProto::OnMind(WPARAM,LPARAM)
 {
 	HWND hDlg = CreateDialogParam( g_hInstance, MAKEINTRESOURCE( IDD_MIND ),
@@ -498,15 +437,9 @@ int FacebookProto::VisitProfile(WPARAM wParam,LPARAM lParam)
 	return 0;
 }
 
-int FacebookProto::RemoveFriend(WPARAM wParam,LPARAM lParam)
+int FacebookProto::CancelFriendship(WPARAM wParam,LPARAM lParam)
 {
-	if (wParam == NULL)
-	{ // self contact
-	//	CallService(MS_UTILS_OPENURL,1,reinterpret_cast<LPARAM>(FACEBOOK_URL_PROFILE));
-		return 0;
-	}
-	
-	if (isOffline())
+	if (wParam == NULL || isOffline())
 		return 0;
 
 	if (MessageBox( 0, TranslateT("Are you sure?"), TranslateT("Delete contact from server list"), MB_ICONWARNING | MB_YESNO | MB_DEFBUTTON2 ) != IDYES)
@@ -517,28 +450,20 @@ int FacebookProto::RemoveFriend(WPARAM wParam,LPARAM lParam)
 	DBVARIANT dbv;			
 	if( !DBGetContactSettingString(hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv) )
 	{
-		if (!isOffline()) {
-			std::string* id = new std::string(dbv.pszVal);
-			ForkThread( &FacebookProto::DeleteContactFromServer, this, ( void* )id );
-			DBFreeVariant(&dbv);
+		std::string* id = new std::string(dbv.pszVal);
+		ForkThread( &FacebookProto::DeleteContactFromServer, this, ( void* )id );
+		DBFreeVariant(&dbv);
 
-			if ( !DBGetContactSettingDword(hContact, m_szModuleName, FACEBOOK_KEY_DELETED, 0) )
-				DBWriteContactSettingDword(hContact, m_szModuleName, FACEBOOK_KEY_DELETED, ::time(NULL));
-		}
+		if ( !DBGetContactSettingDword(hContact, m_szModuleName, FACEBOOK_KEY_DELETED, 0) )
+			DBWriteContactSettingDword(hContact, m_szModuleName, FACEBOOK_KEY_DELETED, ::time(NULL));
 	}
 
 	return 0;
 }
 
-int FacebookProto::AddFriend(WPARAM wParam,LPARAM lParam)
+int FacebookProto::RequestFriendship(WPARAM wParam,LPARAM lParam)
 {
-	if (wParam == NULL)
-	{ // self contact
-//		CallService(MS_UTILS_OPENURL,1,reinterpret_cast<LPARAM>(FACEBOOK_URL_PROFILE));
-		return 0;
-	}
-
-	if (isOffline())
+	if (wParam == NULL || isOffline())
 		return 0;
 
 	HANDLE hContact = reinterpret_cast<HANDLE>(wParam);
@@ -546,39 +471,21 @@ int FacebookProto::AddFriend(WPARAM wParam,LPARAM lParam)
 	DBVARIANT dbv;
 	if( !DBGetContactSettingString(hContact,m_szModuleName,FACEBOOK_KEY_ID,&dbv) )
 	{
-		if (!isOffline()) {
-			std::string* id = new std::string(dbv.pszVal);
-			ForkThread( &FacebookProto::AddContactToServer, this, ( void* )id );
-			DBFreeVariant(&dbv);
-		}
+		std::string* id = new std::string(dbv.pszVal);
+		ForkThread( &FacebookProto::AddContactToServer, this, ( void* )id );
+		DBFreeVariant(&dbv);
 	}
 
 	return 0;
 }
 
-int FacebookProto::ApproveFriend(WPARAM wParam,LPARAM lParam)
+int FacebookProto::ApproveFriendship(WPARAM wParam,LPARAM lParam)
 {
-	if (wParam == NULL)
-	{ // self contact
-//		CallService(MS_UTILS_OPENURL,1,reinterpret_cast<LPARAM>(FACEBOOK_URL_PROFILE));
-		return 0;
-	}
-
-	if (isOffline())
+	if (wParam == NULL || isOffline())
 		return 0;
 
 	HANDLE *hContact = new HANDLE(reinterpret_cast<HANDLE>(wParam));
 	ForkThread( &FacebookProto::ApproveContactToServer, this, ( void* )hContact );
 
 	return 0;
-}
-
-void FacebookProto::ToggleStatusMenuItems( BOOL bEnable )
-{
-	CLISTMENUITEM clmi = { 0 };
-	clmi.cbSize = sizeof( CLISTMENUITEM );
-	clmi.flags = CMIM_FLAGS | (( bEnable ) ? 0 : CMIF_GRAYED);
-
-	CallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )m_hMenuRoot,   ( LPARAM )&clmi );
-	CallService( MS_CLIST_MODIFYMENUITEM, ( WPARAM )m_hStatusMind, ( LPARAM )&clmi );
 }
