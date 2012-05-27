@@ -555,6 +555,17 @@ int FacebookProto::ApproveFriendship(WPARAM wParam,LPARAM lParam)
 	return 0;
 }
 
+int FacebookProto::OnCancelFriendshipRequest(WPARAM wParam,LPARAM lParam)
+{
+	if (wParam == NULL || isOffline())
+		return 0;
+
+	HANDLE *hContact = new HANDLE(reinterpret_cast<HANDLE>(wParam));
+	ForkThread( &FacebookProto::CancelFriendsRequest, this, ( void* )hContact );
+
+	return 0;
+}
+
 HANDLE FacebookProto::HContactFromAuthEvent(HANDLE hEvent)
 {
 	DBEVENTINFO dbei;

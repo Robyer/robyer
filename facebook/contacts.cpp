@@ -173,7 +173,7 @@ void FacebookProto::DeleteContactFromServer(void *data)
 			DBWriteContactSettingDword(hContact, m_szModuleName, FACEBOOK_KEY_DELETED, ::time(NULL));
 		}
 		
-		NotifyEvent(TranslateT("Deleting contact"), TranslateT("Contact was sucessfully removed from your server list."), NULL, FACEBOOK_EVENT_OTHER, NULL);
+		NotifyEvent(m_tszUserName, TranslateT("Contact was removed from your server list."), NULL, FACEBOOK_EVENT_OTHER, NULL);
 	} else {
 		facy.client_notify( TranslateT("Error occured when removing contact from server.") );
 	}
@@ -217,7 +217,7 @@ void FacebookProto::AddContactToServer(void *data)
 			DBWriteContactSettingByte(hContact, m_szModuleName, FACEBOOK_KEY_CONTACT_TYPE, FACEBOOK_CONTACT_REQUEST);
 		}
 				
-		NotifyEvent(TranslateT("Adding contact"), TranslateT("Request for friendship was sent successfully."), NULL, FACEBOOK_EVENT_OTHER, NULL);
+		NotifyEvent(m_tszUserName, TranslateT("Request for friendship was sent."), NULL, FACEBOOK_EVENT_OTHER, NULL);
 	} else {
 		facy.client_notify( TranslateT("Error occured when requesting friendship.") );
 	}
@@ -256,6 +256,46 @@ void FacebookProto::ApproveContactToServer(void *data)
 
 	DBWriteContactSettingByte(hContact, m_szModuleName, FACEBOOK_KEY_CONTACT_TYPE, FACEBOOK_CONTACT_FRIEND);
 }
+
+void FacebookProto::CancelFriendsRequest(void *data)
+{
+	facy.handle_entry( "CancelFriendsRequest" );
+
+	if ( data == NULL )
+		return;
+
+	HANDLE hContact = (*(HANDLE*)data);
+	delete data;
+	
+	std::string query = "phstamp=0&confirmed=1";	
+	query += "&fb_dtsg=" + facy.dtsg_;
+	query += "&__user=" + facy.self_.user_id;
+
+	DBVARIANT dbv;
+	if (!DBGetContactSettingString(hContact, m_szModuleName, FACEBOOK_KEY_ID, &dbv))
+	{
+		query += "&friend=" + std::string(dbv.pszVal);
+		DBFreeVariant(&dbv);
+	}
+
+	// Get unread inbox threads
+	http::response resp = facy.flap( FACEBOOK_REQUEST_CANCEL_REQUEST, &query );
+
+	// Process result data
+	facy.validate_response(&resp);
+
+	if (resp.data.find("\"payload\":null", 0) != std::string::npos)
+	{		
+		DBWriteContactSettingByte(hContact, m_szModuleName, FACEBOOK_KEY_CONTACT_TYPE, FACEBOOK_CONTACT_NONE);
+		NotifyEvent(m_tszUserName, TranslateT("Request for friendship was canceled."), NULL, FACEBOOK_EVENT_OTHER, NULL);
+	} else {
+		facy.client_notify( TranslateT("Error occured when canceling friendship request.") );
+	}
+
+	if (resp.code != HTTP_CODE_OK)
+		facy.handle_error( "CancelFriendsRequest" );
+}
+
 
 HANDLE FacebookProto::GetAwayMsg(HANDLE hContact)
 {
