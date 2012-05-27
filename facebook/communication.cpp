@@ -285,41 +285,10 @@ int facebook_client::choose_method( int request_type )
 
 std::string facebook_client::choose_proto( int request_type )
 {
-	if (this->https_) {
-		if ( request_type != FACEBOOK_REQUEST_MESSAGES_RECEIVE
-			|| DBGetContactSettingByte( NULL, parent->m_szModuleName, FACEBOOK_KEY_FORCE_HTTPS_CHANNEL, DEFAULT_FORCE_HTTPS_CHANNEL ) )
-			return HTTP_PROTO_SECURE;
-	}			
-
-	switch ( request_type )
-	{
-//	case FACEBOOK_REQUEST_LOGOUT:
-//	case FACEBOOK_REQUEST_HOME:
-//	case FACEBOOK_REQUEST_FEEDS:
-//	case FACEBOOK_REQUEST_NOTIFICATIONS:
-//	case FACEBOOK_REQUEST_RECONNECT:
-//	case FACEBOOK_REQUEST_BUDDY_LIST:
-//	case FACEBOOK_REQUEST_LOAD_FRIENDS:
-//	case FACEBOOK_REQUEST_LOAD_REQUESTS:
-//	case FACEBOOK_REQUEST_SEARCH:
-//	case FACEBOOK_REQUEST_STATUS_SET:
-//	case FACEBOOK_REQUEST_MESSAGE_SEND:
-//	case FACEBOOK_REQUEST_MESSAGES_RECEIVE:
-//	case FACEBOOK_REQUEST_VISIBILITY:
-//	case FACEBOOK_REQUEST_TABS:
-//	case FACEBOOK_REQUEST_ASYNC:
-//	case FACEBOOK_REQUEST_TYPING_SEND:
-//  case FACEBOOK_REQUEST_DELETE_FRIEND:
-//	case FACEBOOK_REQUEST_REQUEST_FRIEND:
-//	case FACEBOOK_REQUEST_APPROVE_FRIEND:
-//	case FACEBOOK_REQUEST_CANCEL_REQUEST:
-	default:
-		return HTTP_PROTO_REGULAR;
-
-	case FACEBOOK_REQUEST_LOGIN:
-	case FACEBOOK_REQUEST_SETUP_MACHINE:
+	if (choose_security_level(request_type) == NLHRF_SSL)
 		return HTTP_PROTO_SECURE;
-	}
+	else
+		return HTTP_PROTO_REGULAR;	
 }
 
 std::string facebook_client::choose_server( int request_type, std::string* data, std::string* get_data )
