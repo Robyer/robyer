@@ -95,7 +95,7 @@ DWORD_PTR OmegleProto::GetCaps( int type, HANDLE hContact )
 	switch(type)
 	{
 	case PFLAGNUM_1:
-		return PF1_IM | PF1_CHAT; // TODO: Why we need PF1_IM to activate smileys? Shouldnt be PF1_CHAT enough?
+		return PF1_CHAT;
 	case PFLAGNUM_2:
 		return PF2_ONLINE;
 	case PFLAGNUM_4:
@@ -247,9 +247,9 @@ int OmegleProto::OnContactDeleted(WPARAM wparam,LPARAM)
 	const char *proto = reinterpret_cast<char*>( CallService(MS_PROTO_GETCONTACTBASEPROTO,
 		reinterpret_cast<WPARAM>(hContact),0) );
 
-	if( proto && strcmp(m_szModuleName,proto) == 0 )
+	if ( proto && strcmp(m_szModuleName,proto) == 0 )
 	{
-		if( include_chat )
+		if ( include_chat )
 			return true;
 		else
 			return DBGetContactSettingByte(hContact,m_szModuleName,"ChatRoom",0) == 0;
