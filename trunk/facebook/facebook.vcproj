@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="facebook"
 	ProjectGUID="{DADE9455-DC28-465A-9604-2CA28052B9FB}"
 	RootNamespace="facebook"
@@ -114,7 +114,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="$(SolutionDir)incrementbuild.exe"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -283,7 +283,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="$(SolutionDir)incrementbuild.exe"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -303,7 +303,7 @@
 				Optimization="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="2"
-				AdditionalIncludeDirectories="../../include;."
+				AdditionalIncludeDirectories="../../../include;api"
 				PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;FACEBOOK_EXPORTS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;_WIN64"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -312,7 +312,6 @@
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="common.h"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
 			/>
 			<Tool
