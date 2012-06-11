@@ -611,7 +611,26 @@ bool facebook_client::login(const std::string &username,const std::string &passw
 		{
 			resp = flap( FACEBOOK_REQUEST_SETUP_MACHINE );
 			
-			std::string inner_data = "machine_name=MirandaIM&submit[Save%20Device]=Save%20Device";
+			std::string inner_data;
+			if (resp.data.find("name=\"submit[Continue]\"") != std::string::npos) {
+				// Multi step with approving last unrecognized device
+				// 1) Continue
+				inner_data = "submit[Continue]=Continue";
+				inner_data += "&lsd=" + utils::text::source_get_value(&resp.data, 3, "name=\"lsd\"", "value=\"", "\"" );
+				inner_data += "&nh=" + utils::text::source_get_value(&resp.data, 3, "name=\"nh\"", "value=\"", "\"" );
+				resp = flap( FACEBOOK_REQUEST_SETUP_MACHINE, &inner_data );
+
+				// 2) Approve last unknown login
+				// inner_data = "submit[I%20don't%20recognize]=I%20don't%20recognize"; // Don't recognize - this will force to change account password
+				inner_data = "submit[This%20is%20Okay]=This%20is%20Okay"; // Recognize
+				inner_data += "&lsd=" + utils::text::source_get_value(&resp.data, 3, "name=\"lsd\"", "value=\"", "\"" );
+				inner_data += "&nh=" + utils::text::source_get_value(&resp.data, 3, "name=\"nh\"", "value=\"", "\"" );
+				resp = flap( FACEBOOK_REQUEST_SETUP_MACHINE, &inner_data );
+			}
+
+			// Save actual machine name
+			// inner_data = "machine_name=Miranda%20IM&submit[Don't%20Save]=Don't%20Save"; // Don't save
+			inner_data = "machine_name=Miranda%20IM&submit[Save%20Device]=Save%20Device"; // Save
 			inner_data += "&post_form_id=" + utils::text::source_get_value(&resp.data, 3, "name=\"post_form_id\"", "value=\"", "\"" );
 			inner_data += "&lsd=" + utils::text::source_get_value(&resp.data, 3, "name=\"lsd\"", "value=\"", "\"" );
 			inner_data += "&nh=" + utils::text::source_get_value(&resp.data, 3, "name=\"nh\"", "value=\"", "\"" );
