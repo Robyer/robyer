@@ -108,6 +108,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define FACEBOOK_REQUEST_VISIBILITY             305 // setting chat visibility
 #define FACEBOOK_REQUEST_TABS					306 // closing message window
 #define	FACEBOOK_REQUEST_ASYNC					307 // marking messages read and getting other things
+#define FACEBOOK_REQUEST_THREAD_INFO			310 // getting thread info
 
 #define FACEBOOK_RECV_MESSAGE	1
 #define FACEBOOK_SEND_MESSAGE	2
