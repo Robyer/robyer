@@ -152,6 +152,7 @@ int OmegleProto::OnChatEvent(WPARAM wParam,LPARAM lParam)
 \n2) Question mode\t - You ask two strangers a question and see how they discuss it (you can't join their conversation, only watch)\
 \n3) Spy mode\t - You and stranger got a question to discuss from third stranger (he can't join your conversation, only watch)\
 \n\nSend '/commands' for available commands."), false);
+				break;
 			}
 			else if (!stricmp(command.c_str(), "commands"))
 			{
