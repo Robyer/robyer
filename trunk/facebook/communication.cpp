@@ -240,6 +240,7 @@ DWORD facebook_client::choose_security_level( int request_type )
 //	case FACEBOOK_REQUEST_RECONNECT:
 //	case FACEBOOK_REQUEST_STATUS_SET:
 //	case FACEBOOK_REQUEST_MESSAGE_SEND:
+//	case FACEBOOK_REQUEST_MESSAGE_SEND2:
 //	case FACEBOOK_REQUEST_THREAD_INFO:
 //	case FACEBOOK_REQUEST_MESSAGES_RECEIVE:
 //	case FACEBOOK_REQUEST_VISIBILITY:
@@ -260,6 +261,7 @@ int facebook_client::choose_method( int request_type )
 	case FACEBOOK_REQUEST_BUDDY_LIST:
 	case FACEBOOK_REQUEST_STATUS_SET:
 	case FACEBOOK_REQUEST_MESSAGE_SEND:
+	case FACEBOOK_REQUEST_MESSAGE_SEND2:
 	case FACEBOOK_REQUEST_THREAD_INFO:
 	case FACEBOOK_REQUEST_VISIBILITY:
 	case FACEBOOK_REQUEST_TABS:
@@ -303,9 +305,6 @@ std::string facebook_client::choose_server( int request_type, std::string* data,
 	case FACEBOOK_REQUEST_MESSAGES_RECEIVE:
 	{
 		std::string server = FACEBOOK_SERVER_CHAT;
-		if (!this->chat_channel_jslogger_.empty())
-			server = FACEBOOK_SERVER_CHAT2;
-
 		utils::text::replace_first( &server, "%s", "0" );
 		utils::text::replace_first( &server, "%s", this->chat_channel_host_ );
 		return server;
@@ -325,6 +324,7 @@ std::string facebook_client::choose_server( int request_type, std::string* data,
 //	case FACEBOOK_REQUEST_RECONNECT:
 //	case FACEBOOK_REQUEST_STATUS_SET:
 //	case FACEBOOK_REQUEST_MESSAGE_SEND:
+//	case FACEBOOK_REQUEST_MESSAGE_SEND2:
 //	case FACEBOOK_REQUEST_THREAD_INFO:
 //	case FACEBOOK_REQUEST_VISIBILITY:
 //	case FACEBOOK_REQUEST_TABS:
@@ -441,21 +441,18 @@ std::string facebook_client::choose_action( int request_type, std::string* data,
 	case FACEBOOK_REQUEST_MESSAGE_SEND:
 		return "/ajax/mercury/send_messages.php?__a=1";
 
+	case FACEBOOK_REQUEST_MESSAGE_SEND2:
+		return "/ajax/messaging/send.php?__a=1";
+
 	case FACEBOOK_REQUEST_THREAD_INFO:
 		return "/ajax/mercury/thread_info.php?__a=1";
 
 	case FACEBOOK_REQUEST_MESSAGES_RECEIVE:
 	{
-		std::string action = "/x/%s/0/true/p_%s=%s";
-		if (!this->chat_channel_jslogger_.empty()) {
-			action = "/pull?clientid=&channel=p_%s&seq=%s&cb=&state=active";
-			//utils::text::replace_first( &action, "%s", dtsg_ );
-		} else {
-			utils::text::replace_first( &action, "%s", utils::time::unix_timestamp() );
-		}
-
-		utils::text::replace_first( &action, "%s", self_.user_id );
-		utils::text::replace_first( &action, "%s", chat_sequence_num_.empty() ? "0" : chat_sequence_num_ );
+		std::string action = "/pull?channel=" + (this->chat_channel_.empty() ? "p_" + self_.user_id : this->chat_channel_);
+		action += "&seq=" + (this->chat_sequence_num_.empty() ? "0" : this->chat_sequence_num_);
+		action += "&partition=" + (this->chat_channel_partition_.empty() ? "0" : this->chat_channel_partition_);
+		action += "&clientid=&cb=&idle=0&state=active";
 		return action;
 	}
 
@@ -888,8 +885,8 @@ bool facebook_client::reconnect( )
 	{
 	case HTTP_CODE_OK:
 	{
-		this->chat_channel_jslogger_ = utils::text::source_get_value( &resp.data, 2, "\"jslogger_suffix\":\"", "\"" );
-		parent->Log("      Got self channel jslogger: %s", this->chat_channel_jslogger_.c_str());
+		this->chat_channel_ = utils::text::source_get_value( &resp.data, 2, "\"user_channel\":\"", "\"" );
+		parent->Log("      Got self channel: %s", this->chat_channel_.c_str());
 				
 		this->chat_channel_partition_ = utils::text::source_get_value2( &resp.data, "\"partition\":", ",}" );
 		parent->Log("      Got self channel partition: %s", this->chat_channel_partition_.c_str());
@@ -900,13 +897,6 @@ bool facebook_client::reconnect( )
 		this->chat_sequence_num_ = utils::text::source_get_value2( &resp.data, "\"seq\":", ",}" );
 		parent->Log("      Got self sequence number: %s", this->chat_sequence_num_.c_str());
 
-		if (this->chat_channel_jslogger_.empty()) {
-			if (!atoi(this->chat_channel_host_.substr(0, this->chat_channel_host_.find(".")).c_str())) {
-				this->chat_channel_jslogger_ = "SOMETHING";
-				parent->Log("      Got no jslogger, changed.");
-			}
-		}
-  		
 		return handle_success( "reconnect" );
 	}
 	 
@@ -1069,12 +1059,6 @@ bool facebook_client::channel( )
 	case HTTP_CODE_FAKE_DISCONNECTED:
 	case HTTP_CODE_FAKE_ERROR:
 	default:
-		// Testing workaround for channel change
-		if (!this->chat_channel_jslogger_.empty())
-			this->chat_channel_jslogger_ = "_";
-		else
-			this->chat_channel_jslogger_.clear();
-		
 		return handle_error( "channel" );
 	}
 }
@@ -1111,12 +1095,11 @@ bool facebook_client::send_message( std::string message_recipient, std::string m
 		data += utils::url::encode( message_text );
 		data += "&recipients[0]=";
 		data += message_recipient;
-		data += "&lsd=&fb_dtsg=";
+		data += "&fb_dtsg=";
 		data += ( dtsg_.length( ) ) ? dtsg_ : "0";
-		data += "&post_form_id=";
-		data += ( post_form_id_.length( ) ) ? post_form_id_ : "0";
+		data += "&phstamp=0&__a=1&__user=" + this->self_.user_id;
 
-		resp = flap( FACEBOOK_REQUEST_ASYNC, &data );	
+		resp = flap( FACEBOOK_REQUEST_MESSAGE_SEND2, &data );	
 	}
 	
 	validate_response(&resp);
