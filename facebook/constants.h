@@ -38,8 +38,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // Connection
 #define FACEBOOK_SERVER_REGULAR     "www.facebook.com"
 #define FACEBOOK_SERVER_MOBILE		"m.facebook.com"
-#define FACEBOOK_SERVER_CHAT        "%s.%s.facebook.com"
-#define FACEBOOK_SERVER_CHAT2       "%s-%s.facebook.com"
+#define FACEBOOK_SERVER_CHAT        "%s-%s.facebook.com"
 #define FACEBOOK_SERVER_LOGIN       "login.facebook.com"
 #define FACEBOOK_SERVER_APPS        "apps.facebook.com"
 
@@ -102,8 +101,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define FACEBOOK_REQUEST_CANCEL_REQUEST			129 // cancel friends request
 #define FACEBOOK_REQUEST_RECONNECT              130 // getting __sequence_num__ and __channel_id__
 #define FACEBOOK_REQUEST_STATUS_SET             251 // setting my "What's on my mind?"
-#define FACEBOOK_REQUEST_MESSAGE_SEND           300 // sending message
-#define FACEBOOK_REQUEST_MESSAGES_RECEIVE       301 // receiving messages
+#define FACEBOOK_REQUEST_MESSAGE_SEND           300 // sending messages through chat
+#define FACEBOOK_REQUEST_MESSAGE_SEND2          301 // sending messages through inbox
+#define FACEBOOK_REQUEST_MESSAGES_RECEIVE       302 // receiving messages
 #define FACEBOOK_REQUEST_TYPING_SEND            304 // sending typing notification
 #define FACEBOOK_REQUEST_VISIBILITY             305 // setting chat visibility
 #define FACEBOOK_REQUEST_TABS					306 // closing message window
