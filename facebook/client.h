@@ -150,7 +150,7 @@ public:
 	// Messages handling
 
 	bool    channel( );
-	bool    send_message( std::string message_recipient, std::string message_text, std::string *error_text, bool use_inbox = false, bool is_tid = false );
+	bool    send_message( std::string message_recipient, std::string message_text, std::string *error_text, int method );
 	void    close_chat( std::string message_recipient );
 	void    chat_mark_read( std::string message_recipient );
 
@@ -164,7 +164,7 @@ public:
 
 	// HTTP communication
 
-	http::response  flap( const int request_type, std::string* request_data = NULL, std::string* request_get_data = NULL );
+	http::response  flap( const int request_type, std::string* request_data = NULL, std::string* request_get_data = NULL, int method = 0 );
 	bool    save_url(const std::string &url,const std::string &filename, HANDLE &nlc);
 
 	DWORD   choose_security_level( int );
