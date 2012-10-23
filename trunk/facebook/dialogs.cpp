@@ -50,13 +50,13 @@ INT_PTR CALLBACK FBAccountProc( HWND hwnd, UINT message, WPARAM wparam, LPARAM l
 		SetWindowLongPtr(hwnd,GWLP_USERDATA,lparam);
 
 		DBVARIANT dbv;
-		if ( !DBGetContactSettingString(0,proto->ModuleName(),FACEBOOK_KEY_LOGIN,&dbv) )
+		if ( !DBGetContactSettingString(0,proto->ModuleName(),FACEBOOK_KEY_LOGIN,&dbv))
 		{
 			SetDlgItemTextA(hwnd,IDC_UN,dbv.pszVal);
 			DBFreeVariant(&dbv);
 		}
 
-		if ( !DBGetContactSettingString(0,proto->ModuleName(),FACEBOOK_KEY_PASS,&dbv) )
+		if ( !DBGetContactSettingString(0,proto->ModuleName(),FACEBOOK_KEY_PASS,&dbv))
 		{
 			CallService(MS_DB_CRYPT_DECODESTRING,strlen(dbv.pszVal)+1,
 				reinterpret_cast<LPARAM>(dbv.pszVal));
@@ -74,11 +74,11 @@ INT_PTR CALLBACK FBAccountProc( HWND hwnd, UINT message, WPARAM wparam, LPARAM l
 		if ( LOWORD( wparam ) == IDC_NEWACCOUNTLINK )
 		{
 			CallService(MS_UTILS_OPENURL,1,reinterpret_cast<LPARAM>
-				( FACEBOOK_URL_HOMEPAGE ) );
+				( FACEBOOK_URL_HOMEPAGE ));
 			return TRUE;
 		}
 
-		if ( HIWORD( wparam ) == EN_CHANGE && reinterpret_cast<HWND>(lparam) == GetFocus() )
+		if ( HIWORD( wparam ) == EN_CHANGE && reinterpret_cast<HWND>(lparam) == GetFocus())
 		{
 			switch(LOWORD(wparam))
 			{
@@ -159,7 +159,8 @@ INT_PTR CALLBACK FBMindProc( HWND hwnd, UINT message, WPARAM wparam, LPARAM lpar
 			ShowWindow(hwnd,SW_HIDE);
 
 			char *narrow = mir_utf8encodeT(mindMessage);
-			if (proto->last_status_msg_ != narrow) proto->last_status_msg_ = narrow;
+			if (proto->last_status_msg_ != narrow)
+				proto->last_status_msg_ = narrow;
 			utils::mem::detract(narrow);
 
 			//char *narrow = mir_t2a_cp(mindMessage,CP_UTF8);
@@ -195,13 +196,13 @@ INT_PTR CALLBACK FBOptionsProc( HWND hwnd, UINT message, WPARAM wparam, LPARAM l
 		SetWindowLongPtr(hwnd,GWLP_USERDATA,lparam);
 
 		DBVARIANT dbv;
-		if ( !DBGetContactSettingString(0,proto->ModuleName(),FACEBOOK_KEY_LOGIN,&dbv) )
+		if ( !DBGetContactSettingString(0,proto->ModuleName(),FACEBOOK_KEY_LOGIN,&dbv))
 		{
 			SetDlgItemTextA(hwnd,IDC_UN,dbv.pszVal);
 			DBFreeVariant(&dbv);
 		}
 
-		if ( !DBGetContactSettingString(0,proto->ModuleName(),FACEBOOK_KEY_PASS,&dbv) )
+		if ( !DBGetContactSettingString(0,proto->ModuleName(),FACEBOOK_KEY_PASS,&dbv))
 		{
 			CallService(MS_DB_CRYPT_DECODESTRING,strlen(dbv.pszVal)+1,reinterpret_cast<LPARAM>(dbv.pszVal));
 			SetDlgItemTextA(hwnd,IDC_PW,dbv.pszVal);
@@ -216,7 +217,7 @@ INT_PTR CALLBACK FBOptionsProc( HWND hwnd, UINT message, WPARAM wparam, LPARAM l
 
 		SendDlgItemMessage(hwnd, IDC_GROUP, EM_LIMITTEXT, FACEBOOK_GROUP_NAME_LIMIT, 0);
 
-		if ( !DBGetContactSettingTString(0,proto->ModuleName(),FACEBOOK_KEY_DEF_GROUP,&dbv) )
+		if ( !DBGetContactSettingTString(0,proto->ModuleName(),FACEBOOK_KEY_DEF_GROUP,&dbv))
 		{
 			SetDlgItemText(hwnd,IDC_GROUP,dbv.ptszVal);
 			DBFreeVariant(&dbv);
@@ -232,7 +233,7 @@ INT_PTR CALLBACK FBOptionsProc( HWND hwnd, UINT message, WPARAM wparam, LPARAM l
 		if ( LOWORD( wparam ) == IDC_NEWACCOUNTLINK )
 		{
 			CallService(MS_UTILS_OPENURL,1,reinterpret_cast<LPARAM>
-				( FACEBOOK_URL_HOMEPAGE ) );
+				( FACEBOOK_URL_HOMEPAGE ));
 			return TRUE;
 		}
 
@@ -308,7 +309,8 @@ INT_PTR CALLBACK FBOptionsAdvancedProc( HWND hwnd, UINT message, WPARAM wparam, 
 
 		EnableWindow(GetDlgItem(hwnd, IDC_SECURE_CHANNEL), IsDlgButtonChecked(hwnd, IDC_SECURE));
 
-	} return TRUE;
+		return TRUE;
+	}
 
 	case WM_COMMAND: {
 		if ( LOWORD( wparam ) == IDC_SECURE ) {			
@@ -319,8 +321,9 @@ INT_PTR CALLBACK FBOptionsAdvancedProc( HWND hwnd, UINT message, WPARAM wparam, 
 			MessageBox( hwnd, TranslateT("Note: Make sure you have disabled 'Validate SSL certificates' option in Network options to work properly."), proto->m_tszUserName, MB_OK );
 
 		SendMessage(GetParent(hwnd),PSM_CHANGED,0,0);
-
-	} break;
+		
+		break;
+	}
 
 	case WM_NOTIFY:
 		if ( reinterpret_cast<NMHDR*>(lparam)->code == PSN_APPLY )
@@ -339,7 +342,7 @@ INT_PTR CALLBACK FBOptionsAdvancedProc( HWND hwnd, UINT message, WPARAM wparam, 
 			if (setStatus != setStatusOld)
 			{
 				DBWriteContactSettingByte(NULL, proto->m_szModuleName, FACEBOOK_KEY_SET_MIRANDA_STATUS, setStatus);
-				if (setStatus && proto->isOnline() && DBGetContactSettingByte(NULL, proto->m_szModuleName, FACEBOOK_KEY_SET_MIRANDA_STATUS, DEFAULT_SET_MIRANDA_STATUS))
+				if (setStatus && proto->isOnline())
 				{
 					ForkThread(&FacebookProto::SetAwayMsgWorker, proto, NULL);
 				}
@@ -347,8 +350,8 @@ INT_PTR CALLBACK FBOptionsAdvancedProc( HWND hwnd, UINT message, WPARAM wparam, 
 
 			return TRUE;
 		}
-		break;
 
+		break;	
 	}
 
 	return FALSE;
@@ -412,7 +415,7 @@ INT_PTR CALLBACK FBEventsProc( HWND hwnd, UINT message, WPARAM wparam, LPARAM lp
 	} return TRUE;
 
 	case WM_COMMAND: {
-		switch ( LOWORD( wparam ) )
+		switch ( LOWORD( wparam ))
 		{
 		case IDC_PREVIEW:
 		{

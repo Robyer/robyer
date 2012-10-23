@@ -82,7 +82,10 @@ void FacebookProto::CheckAvatarChange(HANDLE hContact, std::string image_url)
 	{
 		DBWriteContactSettingString(hContact, m_szModuleName, FACEBOOK_KEY_AV_URL, image_url.c_str());
 		if (hContact)
+		{
+			DBWriteContactSettingByte(hContact, "ContactPhoto", "NeedUpdate", 1);
 			ProtoBroadcastAck(m_szModuleName, hContact, ACKTYPE_AVATAR, ACKRESULT_STATUS, NULL, 0);
+		}
 		else
 		{
 			PROTO_AVATAR_INFORMATION ai = {sizeof(ai)};
